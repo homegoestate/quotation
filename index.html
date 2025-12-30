@@ -2,37 +2,40 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>宏國/易丞地政 - 專業報價單系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>宏國/易丞地政 - 專業報價系統</title>
     <style>
         :root {
-            --primary-color: #c8102e; /* 宏國紅 */
-            --secondary-color: #005a87; /* 易丞藍 */
+            --primary-color: #c8102e;
+            --secondary-color: #005a87;
             --gray-text: #555;
-            --border-color: #ddd;
+            --bg-color: #f0f2f5;
         }
 
         body {
-            font-family: "Microsoft JhengHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
+            font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
             margin: 0;
-            padding: 0; /* 移除外距以適應滿版 */
+            padding: 0;
             display: flex;
             height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden; /* 防止雙重捲軸 */
+            overflow: hidden; /* 防止整體捲軸，由內部區塊處理 */
         }
 
-        /* --- 左側控制面板 (響應式調整) --- */
+        /* --- 左側控制面板 --- */
         .control-panel {
-            width: 400px; /* 固定寬度，避免過寬 */
-            flex-shrink: 0;
+            width: 400px;
+            min-width: 320px;
             background: white;
-            padding: 25px;
+            padding: 20px;
             border-right: 1px solid #ddd;
-            overflow-y: auto; /* 內容過多時可捲動 */
+            overflow-y: auto; /* 獨立捲軸 */
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            /* 讓底部不被切掉 */
+            padding-bottom: 50px; 
         }
 
         .control-panel h2 {
@@ -40,38 +43,23 @@
             color: #333;
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
+            font-size: 1.5rem;
         }
 
         .section-title {
-            font-size: 14px;
+            font-size: 0.9rem;
             color: var(--secondary-color);
             font-weight: bold;
             margin: 20px 0 10px 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
         }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 0.9em;
-            color: #333;
-        }
-
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; color: #333; }
         .form-group input, .form-group textarea, .form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
         }
 
         .btn {
@@ -83,257 +71,123 @@
             cursor: pointer;
             width: 100%;
             margin-top: 15px;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: bold;
-            transition: background 0.3s;
+            transition: 0.3s;
         }
         .btn:hover { background-color: #004466; }
-
         .btn-green { background-color: #28a745; margin-top: 5px;}
-        .btn-green:hover { background-color: #218838; }
-        
-        .btn-red { background-color: #dc3545; width: auto; padding: 5px 10px; margin-top: 0; font-size: 12px;}
-        
-        .item-row {
-            display: grid;
-            grid-template-columns: 2fr 0.8fr 1fr auto; /* 調整欄位比例 */
-            gap: 5px;
-            margin-bottom: 8px;
-            align-items: center;
-            background: #f9f9f9;
-            padding: 5px;
-            border-radius: 4px;
-        }
+        .btn-red { background-color: #dc3545; width: auto; padding: 8px 12px; font-size: 0.9rem;}
 
-        /* --- 右側預覽區 (A4 紙張模擬) --- */
+        .item-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .item-row input[type="text"] { flex: 2; min-width: 150px; }
+        .item-row input[type="number"] { flex: 1; min-width: 60px; }
+        
+        /* --- 右側預覽區 --- */
         .preview-container {
             flex: 1;
             background: #525659;
             padding: 40px;
-            overflow-y: auto; /* 讓右側可以獨立捲動 */
+            overflow: auto; /* 允許捲動 */
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 讓 A4 紙張從上面開始 */
+            align-items: flex-start;
         }
 
         .a4-page {
             background: white;
             width: 210mm;
-            min-height: 297mm; /* 保持 A4 高度 */
+            /* 讓高度隨內容延伸，但最少為 A4 高度 */
+            min-height: 297mm; 
             padding: 15mm 20mm;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            position: relative;
             box-sizing: border-box;
-            /* 讓內容撐開時保持白底 */
-            height: auto; 
+            position: relative;
         }
 
-        /* --- 報價單內樣式 --- */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            border-bottom: 3px solid var(--secondary-color);
-            padding-bottom: 15px;
-        }
+        /* --- 報價單排版 --- */
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 3px solid var(--secondary-color); padding-bottom: 15px; }
+        .logos { display: flex; gap: 15px; align-items: center; }
+        .logos img { height: 60px; object-fit: contain; }
+        .company-info { text-align: right; font-size: 12px; color: var(--gray-text); line-height: 1.4; }
+        .company-info h1 { margin: 0 0 5px 0; color: #333; font-size: 16px; font-weight: 800; }
+        
+        .quote-title { text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; letter-spacing: 3px; color: #222; }
 
-        .logos {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
+        .info-grid { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
+        .client-info, .meta-info { width: 48%; min-width: 250px; }
+        .info-row { display: flex; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 2px; }
+        .info-label { width: 85px; font-weight: bold; color: #444; font-size: 14px; }
+        .info-value { flex: 1; color: #000; font-size: 14px; word-break: break-all; }
 
-        .logos img {
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .company-info {
-            text-align: right;
-            font-size: 12px;
-            color: var(--gray-text);
-            line-height: 1.4;
-        }
-
-        .company-info h1 {
-            margin: 0 0 5px 0;
-            color: #333;
-            font-size: 16px; 
-            font-weight: 800;
-        }
-
-        .quote-title {
-            text-align: center;
-            font-size: 26px;
-            font-weight: bold;
-            margin: 15px 0 25px 0;
-            letter-spacing: 3px;
-            color: #222;
-        }
-
-        .info-grid {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            gap: 20px;
-        }
-
-        .client-info, .meta-info {
-            width: 48%;
-        }
-
-        .info-row {
-            display: flex;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
-            padding-bottom: 2px;
-        }
-
-        .info-label {
-            width: 85px;
-            font-weight: bold;
-            color: #444;
-            font-size: 14px;
-        }
-
-        .info-value {
-            flex: 1;
-            color: #000;
-            font-size: 14px;
-        }
-
-        /* 表格樣式 */
-        table.quote-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        table.quote-table th {
-            background-color: var(--secondary-color);
-            color: white;
-            padding: 8px 10px;
-            text-align: left;
-            font-size: 14px;
-            border: 1px solid var(--secondary-color);
-        }
-
-        table.quote-table td {
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            color: #333;
-            font-size: 14px;
-        }
-
+        table.quote-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table.quote-table th { background-color: var(--secondary-color); color: white; padding: 8px 10px; text-align: left; font-size: 14px; border: 1px solid var(--secondary-color); }
+        table.quote-table td { padding: 8px 10px; border: 1px solid #ddd; color: #333; font-size: 14px; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
 
-        .totals-section {
-            width: 50%;
-            margin-left: auto;
-        }
+        .totals-section { width: 50%; margin-left: auto; min-width: 200px; }
+        .total-row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; }
+        .total-row.final { background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #333; font-size: 16px; margin-top: 10px; padding: 10px; }
 
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 10px;
-            font-size: 14px;
-        }
+        .notes-section { margin-top: 30px; padding: 15px; border: 1px solid #eee; border-left: 5px solid var(--primary-color); background-color: #fffbfc; font-size: 13px; line-height: 1.6; white-space: pre-wrap; text-align: left; }
+        
+        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+        .sig-box { width: 40%; border-top: 1px solid #333; padding-top: 10px; text-align: center; font-size: 14px; }
 
-        .total-row.final {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            border-top: 2px solid #333;
-            border-bottom: 1px solid #333;
-            font-size: 16px;
-            margin-top: 10px;
-            padding: 10px;
-        }
-
-        .notes-section {
-            margin-top: 30px;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-left: 5px solid var(--primary-color);
-            background-color: #fffbfc;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap; /* 保留換行 */
-            text-align: left; /* 強制靠左 */
-            color: #333;
-        }
-
-        .signature-section {
-            margin-top: 60px;
-            display: flex;
-            justify-content: space-between;
-            page-break-inside: avoid;
-        }
-
-        .sig-box {
-            width: 40%;
-            border-top: 1px solid #333;
-            padding-top: 10px;
-            text-align: center;
-            font-size: 14px;
-            color: #333;
-        }
-
-        /* --- 響應式媒體查詢 (Mobile/Tablet) --- */
+        /* --- 手機/平板 RWD 調整 --- */
         @media screen and (max-width: 900px) {
-            body {
-                flex-direction: column; /* 改為垂直排列 */
-                height: auto;
-                overflow: auto;
-            }
-
-            .control-panel {
-                width: 100%;
-                max-width: none;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid #ddd;
-                padding: 20px;
+            body { flex-direction: column; overflow: auto; height: auto; }
+            
+            .control-panel { 
+                width: 100%; 
+                border-right: none; 
+                border-bottom: 1px solid #ddd; 
+                padding-bottom: 30px;
             }
 
             .preview-container {
                 width: 100%;
                 padding: 10px;
                 background: #e0e0e0;
+                display: block; /* 讓內容可滑動 */
+                overflow-x: auto; /* 允許橫向捲動查看報價單 */
             }
 
             .a4-page {
-                width: 100%;
-                min-height: auto;
-                padding: 10mm;
+                margin: 0 auto; /* 居中 */
+                /* 在手機上保持 A4 寬度，讓使用者滑動查看，避免擠壓變形 */
+                min-width: 210mm; 
             }
         }
 
-        /* --- 列印控制 --- */
+        /* --- 列印模式 --- */
         @media print {
-            body { background: white; padding: 0; display: block; height: auto; overflow: visible; }
+            body { display: block; background: white; height: auto; overflow: visible; }
             .control-panel { display: none; }
-            .preview-container { background: white; padding: 0; display: block; width: 100%; }
-            .a4-page { 
-                width: 100%; 
-                box-shadow: none; 
-                padding: 0; 
-                margin: 0; 
-                border: none;
-            }
-            @page { margin: 15mm; }
+            .preview-container { display: block; padding: 0; background: white; margin: 0; width: 100%; overflow: visible; }
+            .a4-page { width: 100%; box-shadow: none; padding: 0; margin: 0; min-height: 0; min-width: 0; border: none; }
+            @page { margin: 10mm 15mm; }
         }
     </style>
 </head>
-<body>
-
-    <div class="control-panel">
-        <h2>🛠️ 報價單設定</h2>
+<body oncontextmenu="return false;"> 
+<div class="control-panel">
+        <h2>🔒 宏國/易丞 報價系統</h2>
+        <div style="font-size:12px; color:#888; margin-bottom:10px;">安全模式：已啟用防拷貝保護</div>
         
         <div class="section-title">基本資訊</div>
         <div class="form-group">
-            <label>報價單號 / 主題</label>
+            <label>專案名稱 / 單號</label>
             <input type="text" id="inputSubject" value="聽心苑~大樓戶別實價登錄更正" oninput="updatePreview()">
         </div>
         <div class="form-group">
@@ -345,13 +199,13 @@
             <input type="date" id="inputValidDate" oninput="updatePreview()">
         </div>
 
-        <div class="section-title">我方資訊 (公司)</div>
+        <div class="section-title">我方資訊</div>
         <div class="form-group">
             <label>公司地址</label>
             <input type="text" id="inputCompanyAddress" value="台南市北區文賢路1080巷11號" oninput="updatePreview()">
         </div>
         <div class="form-group">
-            <label>聯絡人 / 職稱</label>
+            <label>聯絡窗口</label>
             <input type="text" id="inputContact" value="楊翊 地政士" oninput="updatePreview()">
         </div>
         <div class="form-group">
@@ -361,22 +215,21 @@
 
         <div class="section-title">客戶資訊</div>
         <div class="form-group">
-            <label>客戶名稱 (抬頭)</label>
+            <label>客戶名稱</label>
             <input type="text" id="inputClient" value="長築興業有限公司" oninput="updatePreview()">
         </div>
         <div class="form-group">
             <label>客戶地址</label>
-            <input type="text" id="inputClientAddress" value="" placeholder="請輸入客戶地址" oninput="updatePreview()">
+            <input type="text" id="inputClientAddress" placeholder="請輸入客戶地址" oninput="updatePreview()">
         </div>
 
-        <div class="section-title">報價項目</div>
-        <div id="itemsContainer">
-            </div>
+        <div class="section-title">項目列表</div>
+        <div id="itemsContainer"></div>
         <button class="btn btn-green" onclick="addItem()">+ 新增項目</button>
 
-        <div class="section-title">金額與條款</div>
+        <div class="section-title">結算與備註</div>
         <div class="form-group">
-            <label>折扣金額 (元)</label>
+            <label>折扣金額</label>
             <input type="number" id="inputDiscount" value="100000" oninput="calculateTotal()">
         </div>
 
@@ -388,7 +241,7 @@
 3. 匯款資訊：(請在此輸入銀行帳號)</textarea>
         </div>
 
-        <button class="btn" onclick="window.print()">🖨️ 列印 / 存成 PDF</button>
+        <button class="btn" onclick="window.print()">🖨️ 列印 / 下載 PDF</button>
     </div>
 
     <div class="preview-container">
@@ -396,8 +249,8 @@
             
             <div class="header">
                 <div class="logos">
-                    <img src="宏國地政封面.jpg" alt="宏國地政" onerror="this.style.display='none'; document.getElementById('logo-text-hg').style.display='block'">
-                    <img src="未命名2.png" alt="易丞地政" onerror="this.style.display='none'; document.getElementById('logo-text-yc').style.display='block'">
+                    <img src="宏國地政封面.jpg" alt="宏國" onerror="this.style.display='none'; document.getElementById('logo-text-hg').style.display='block'">
+                    <img src="未命名2.png" alt="易丞" onerror="this.style.display='none'; document.getElementById('logo-text-yc').style.display='block'">
                     
                     <div id="logo-text-hg" style="display:none; font-weight:bold; color:#c8102e; font-size:20px;">HG 宏國地政</div>
                     <div id="logo-text-yc" style="display:none; font-weight:bold; color:#005a87; font-size:20px; margin-left:10px;">易丞地政士事務所</div>
@@ -414,32 +267,14 @@
 
             <div class="info-grid">
                 <div class="client-info">
-                    <div class="info-row">
-                        <div class="info-label">客戶名稱：</div>
-                        <div class="info-value" id="displayClient"></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">客戶地址：</div>
-                        <div class="info-value" id="displayClientAddress"></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">專案名稱：</div>
-                        <div class="info-value" id="displaySubject"></div>
-                    </div>
+                    <div class="info-row"><div class="info-label">客戶名稱：</div><div class="info-value" id="displayClient"></div></div>
+                    <div class="info-row"><div class="info-label">客戶地址：</div><div class="info-value" id="displayClientAddress"></div></div>
+                    <div class="info-row"><div class="info-label">專案名稱：</div><div class="info-value" id="displaySubject"></div></div>
                 </div>
                 <div class="meta-info">
-                    <div class="info-row">
-                        <div class="info-label">報價日期：</div>
-                        <div class="info-value" id="displayDate"></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">有效期限：</div>
-                        <div class="info-value" id="displayValidDate"></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">聯絡窗口：</div>
-                        <div class="info-value"><span id="displayContact"></span> (<span id="displayPhone"></span>)</div>
-                    </div>
+                    <div class="info-row"><div class="info-label">報價日期：</div><div class="info-value" id="displayDate"></div></div>
+                    <div class="info-row"><div class="info-label">有效期限：</div><div class="info-value" id="displayValidDate"></div></div>
+                    <div class="info-row"><div class="info-label">聯絡窗口：</div><div class="info-value"><span id="displayContact"></span> (<span id="displayPhone"></span>)</div></div>
                 </div>
             </div>
 
@@ -452,27 +287,14 @@
                         <th class="text-right" style="width: 25%">金額</th>
                     </tr>
                 </thead>
-                <tbody id="displayItems">
-                    </tbody>
+                <tbody id="displayItems"></tbody>
             </table>
 
             <div class="totals-section">
-                <div class="total-row">
-                    <span>小計 (Subtotal):</span>
-                    <span id="displaySubtotal">NT$0</span>
-                </div>
-                <div class="total-row">
-                    <span>稅金 (Tax 0%):</span>
-                    <span>NT$0</span>
-                </div>
-                <div class="total-row" style="color: var(--primary-color);">
-                    <span>折扣 (Discount):</span>
-                    <span id="displayDiscount">-NT$0</span>
-                </div>
-                <div class="total-row final">
-                    <span>總計 (Total):</span>
-                    <span id="displayTotal">NT$0</span>
-                </div>
+                <div class="total-row"><span>小計 (Subtotal):</span><span id="displaySubtotal">NT$0</span></div>
+                <div class="total-row"><span>稅金 (Tax 0%):</span><span>NT$0</span></div>
+                <div class="total-row" style="color: var(--primary-color);"><span>折扣 (Discount):</span><span id="displayDiscount">-NT$0</span></div>
+                <div class="total-row final"><span>總計 (Total):</span><span id="displayTotal">NT$0</span></div>
             </div>
 
             <div class="notes-section">
@@ -481,30 +303,29 @@
             </div>
 
             <div class="signature-section">
-                <div class="sig-box">
-                    客戶簽署 (Acceptance)
-                    <br><br><br>
-                </div>
-                <div class="sig-box">
-                    公司授權代表 (Authorized)
-                    <br><br><br>
-                </div>
+                <div class="sig-box">客戶簽署 (Acceptance)<br><br><br></div>
+                <div class="sig-box">公司授權代表 (Authorized)<br><br><br></div>
             </div>
 
         </div>
     </div>
 
     <script>
-        // 初始化日期
+        /* === 安全防護腳本 === */
+        document.onkeydown = function(e) {
+            // 阻擋 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if(event.keyCode == 123) { return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
+        }
+
+        /* === 報價單邏輯 === */
         document.getElementById('inputDate').valueAsDate = new Date();
         let d = new Date();
-        let lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        document.getElementById('inputValidDate').valueAsDate = lastDay;
+        document.getElementById('inputValidDate').valueAsDate = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
-        // 初始項目資料
-        let items = [
-            { desc: '聽心苑~大樓戶別實價登錄更正', qty: 50, price: 4000 }
-        ];
+        let items = [{ desc: '聽心苑~大樓戶別實價登錄更正', qty: 50, price: 4000 }];
 
         function renderInputItems() {
             const container = document.getElementById('itemsContainer');
@@ -515,7 +336,7 @@
                 div.innerHTML = `
                     <input type="text" placeholder="品項" value="${item.desc}" oninput="updateItem(${index}, 'desc', this.value)">
                     <input type="number" placeholder="數" value="${item.qty}" oninput="updateItem(${index}, 'qty', this.value)">
-                    <input type="number" placeholder="單價" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
+                    <input type="number" placeholder="價" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
                     <button class="btn btn-red" onclick="removeItem(${index})">X</button>
                 `;
                 container.appendChild(div);
@@ -523,22 +344,10 @@
             updatePreview();
         }
 
-        function addItem() {
-            items.push({ desc: '', qty: 1, price: 0 });
-            renderInputItems();
-        }
-
-        function removeItem(index) {
-            items.splice(index, 1);
-            renderInputItems();
-        }
-
+        function addItem() { items.push({ desc: '', qty: 1, price: 0 }); renderInputItems(); }
+        function removeItem(index) { items.splice(index, 1); renderInputItems(); }
         function updateItem(index, field, value) {
-            if (field === 'qty' || field === 'price') {
-                items[index][field] = parseFloat(value) || 0;
-            } else {
-                items[index][field] = value;
-            }
+            items[index][field] = (field === 'qty' || field === 'price') ? (parseFloat(value) || 0) : value;
             calculateTotal();
         }
 
@@ -550,43 +359,26 @@
             let subtotal = 0;
             const tbody = document.getElementById('displayItems');
             tbody.innerHTML = '';
-
             items.forEach(item => {
                 const amount = item.qty * item.price;
                 subtotal += amount;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.desc}</td>
-                        <td class="text-center">${item.qty}</td>
-                        <td class="text-right">${formatMoney(item.price)}</td>
-                        <td class="text-right">${formatMoney(amount)}</td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr><td>${item.desc}</td><td class="text-center">${item.qty}</td><td class="text-right">${formatMoney(item.price)}</td><td class="text-right">${formatMoney(amount)}</td></tr>`;
             });
-
             const discount = parseFloat(document.getElementById('inputDiscount').value) || 0;
-            const total = subtotal - discount;
-
             document.getElementById('displaySubtotal').innerText = formatMoney(subtotal);
             document.getElementById('displayDiscount').innerText = '-' + formatMoney(discount);
-            document.getElementById('displayTotal').innerText = formatMoney(total);
+            document.getElementById('displayTotal').innerText = formatMoney(subtotal - discount);
         }
 
         function updatePreview() {
-            document.getElementById('displaySubject').innerText = document.getElementById('inputSubject').value;
-            document.getElementById('displayClient').innerText = document.getElementById('inputClient').value;
-            document.getElementById('displayClientAddress').innerText = document.getElementById('inputClientAddress').value;
-            document.getElementById('displayDate').innerText = document.getElementById('inputDate').value;
-            document.getElementById('displayValidDate').innerText = document.getElementById('inputValidDate').value;
-            document.getElementById('displayNotes').innerText = document.getElementById('inputNotes').value;
-            document.getElementById('displayContact').innerText = document.getElementById('inputContact').value;
-            document.getElementById('displayPhone').innerText = document.getElementById('inputPhone').value;
-            document.getElementById('displayCompanyAddress').innerText = document.getElementById('inputCompanyAddress').value;
-            
+            const ids = ['Subject', 'Client', 'ClientAddress', 'Date', 'ValidDate', 'Notes', 'Contact', 'Phone', 'CompanyAddress'];
+            ids.forEach(id => {
+                const el = document.getElementById('display' + id);
+                const input = document.getElementById('input' + id);
+                if(el && input) el.innerText = input.value;
+            });
             calculateTotal();
         }
-
-        // 啟動
         renderInputItems();
     </script>
 </body>
