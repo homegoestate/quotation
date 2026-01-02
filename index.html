@@ -188,7 +188,8 @@
         <div class="section-title">基本資訊</div>
         <div class="form-group">
             <label>專案名稱 / 單號</label>
-            <input type="text" id="inputSubject" value="聽心苑~大樓戶別實價登錄更正" oninput="updatePreview()">
+            <!-- 修改：將預設值清空 -->
+            <input type="text" id="inputSubject" value="" placeholder="請輸入專案名稱" oninput="updatePreview()">
         </div>
         <div class="form-group">
             <label>報價日期</label>
@@ -206,7 +207,8 @@
         </div>
         <div class="form-group">
             <label>聯絡窗口</label>
-            <input type="text" id="inputContact" value="楊翊 地政士" oninput="updatePreview()">
+            <!-- 修改：將預設值改為 楊翊晟地政士 -->
+            <input type="text" id="inputContact" value="楊翊晟地政士" oninput="updatePreview()">
         </div>
         <div class="form-group">
             <label>聯絡電話</label>
@@ -216,7 +218,8 @@
         <div class="section-title">客戶資訊</div>
         <div class="form-group">
             <label>客戶名稱</label>
-            <input type="text" id="inputClient" value="長築興業有限公司" oninput="updatePreview()">
+            <!-- 修改：將預設值清空，方便輸入新客戶 -->
+            <input type="text" id="inputClient" value="" placeholder="請輸入客戶名稱" oninput="updatePreview()">
         </div>
         <div class="form-group">
             <label>客戶地址</label>
@@ -230,15 +233,16 @@
         <div class="section-title">結算與備註</div>
         <div class="form-group">
             <label>折扣金額</label>
-            <input type="number" id="inputDiscount" value="100000" oninput="calculateTotal()">
+            <!-- 修改：預設歸零 -->
+            <input type="number" id="inputDiscount" value="0" oninput="calculateTotal()">
         </div>
 
         <div class="form-group">
             <label>備註條款</label>
+            <!-- 修改：移除特定金額的說明，改為通用模板 -->
             <textarea id="inputNotes" rows="6" oninput="updatePreview()">此提案包括下述條件:
 1. 該報價不含政府單位所收取之稅金，由建設公司負擔之費用，並配合建設公司分批交屋時請款。
-2. 原始報價18萬4000元，合作廠商專案報價折扣後總計10萬元整。
-3. 匯款資訊：(請在此輸入銀行帳號)</textarea>
+2. 匯款資訊：(請在此輸入銀行帳號)</textarea>
         </div>
 
         <button class="btn" onclick="window.print()">🖨️ 列印 / 下載 PDF</button>
@@ -321,11 +325,13 @@
         }
 
         /* === 報價單邏輯 === */
+        // 自動帶入今天日期與下個月底
         document.getElementById('inputDate').valueAsDate = new Date();
         let d = new Date();
         document.getElementById('inputValidDate').valueAsDate = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
-        let items = [{ desc: '聽心苑~大樓戶別實價登錄更正', qty: 50, price: 4000 }];
+        // 修改：預設為空項目，而非特定建案
+        let items = [{ desc: '', qty: 1, price: 0 }];
 
         function renderInputItems() {
             const container = document.getElementById('itemsContainer');
@@ -381,5 +387,9 @@
         }
         renderInputItems();
     </script>
+<!-- Chosen Palette: Existing Red/Blue Professional -->
+<!-- Application Structure Plan: Split view quotation editor with live preview. Left side controls input, right side displays A4 print preview. -->
+<!-- Visualization & Content Choices: HTML Table for line items, real-time JS calculation for totals. No SVG graphics used. NO Mermaid JS used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 </body>
 </html>
