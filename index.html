@@ -144,6 +144,86 @@
         .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; }
         .sig-box { width: 40%; border-top: 1px solid #333; padding-top: 10px; text-align: center; font-size: 14px; }
 
+
+        /* === ERP Portal / Audit Extension v1 === */
+        .internal-only { display: block; }
+        .portal-banner {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0 14px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .18);
+        }
+        .portal-banner .status-line { display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; }
+        .portal-user { font-weight: 800; font-size: 15px; color: #facc15; }
+        .portal-role {
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .portal-hint { margin-top: 6px; font-size: 12px; color: #dbeafe; line-height: 1.45; }
+        .audit-panel {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            color: #334155;
+        }
+        .audit-row { display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed #dbe4ee; padding:5px 0; }
+        .audit-row:last-child { border-bottom:none; }
+        .btn-small {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition: .2s;
+        }
+        .btn-small:hover { transform: translateY(-1px); filter: brightness(.98); }
+        .btn-blue { background:#005a87; color:white; }
+        .btn-gray { background:#e2e8f0; color:#334155; }
+        .btn-yellow { background:#f59e0b; color:white; }
+        .btn-ghost { background:white; color:#005a87; border:1px solid #b6d7e8; }
+        .internal-note {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-left: 4px solid #f97316;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 12px;
+            color: #9a3412;
+            line-height: 1.45;
+            margin-top: 8px;
+        }
+        .record-list {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            margin-top: 8px;
+        }
+        .record-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+        }
+        .record-item:last-child { border-bottom:none; }
+        .record-title { font-weight: 800; color:#0f172a; }
+        .record-meta { color:#64748b; margin-top:2px; }
+        .record-actions { display:flex; gap:5px; }
+        .danger-text { color:#dc2626; font-size:12px; font-weight:700; display:none; margin-top:4px; }
+
         /* --- 手機/平板 RWD 調整 --- */
         @media screen and (max-width: 900px) {
             body { flex-direction: column; overflow: auto; height: auto; }
@@ -174,6 +254,7 @@
         @media print {
             body { display: block; background: white; height: auto; overflow: visible; }
             .control-panel { display: none; }
+            .internal-only { display: none !important; }
             .preview-container { display: block; padding: 0; background: white; margin: 0; width: 100%; overflow: visible; }
             .a4-page { width: 100%; box-shadow: none; padding: 0; margin: 0; min-height: 0; min-width: 0; border: none; }
             @page { margin: 10mm 15mm; }
@@ -184,6 +265,20 @@
 <div class="control-panel">
         <h2>🔒 宏國/易丞 報價系統</h2>
         <div style="font-size:12px; color:#888; margin-bottom:10px;">安全模式：已啟用防拷貝保護</div>
+
+        <div class="portal-banner internal-only" id="portalBanner">
+            <div class="status-line">
+                <div>
+                    <div style="font-size:11px; opacity:.8; letter-spacing:1px;">ERP 單一登入身份</div>
+                    <div class="portal-user" id="portalUserName">未綁定總控制管理</div>
+                </div>
+                <div class="portal-role" id="portalUserRole">單機模式</div>
+            </div>
+            <div class="portal-hint" id="portalHint">
+                若從總控制管理進入，系統會自動帶入登入者；本頁不需要另外登入或選人。
+            </div>
+        </div>
+
         
         <div class="section-title">基本資訊</div>
         <div class="form-group">
@@ -237,6 +332,13 @@
             <input type="number" id="inputDiscount" value="0" oninput="calculateTotal()">
         </div>
 
+        <div class="form-group internal-only">
+            <label>折扣原因 / 主管核准備註（內部留痕，不列印）</label>
+            <textarea id="inputDiscountReason" rows="3" placeholder="若有折扣，請填寫原因；大幅折扣建議由主管或 CEO 核准。" oninput="updatePreview()"></textarea>
+            <div class="danger-text" id="discountWarning">⚠️ 有折扣時必須填寫折扣原因，避免日後爭議。</div>
+        </div>
+
+
         <div class="form-group">
             <label>備註條款</label>
             <!-- 修改：移除特定金額的說明，改為通用模板 -->
@@ -246,6 +348,23 @@
         </div>
 
         <button class="btn" onclick="window.print()">🖨️ 列印 / 下載 PDF</button>
+
+        <div class="section-title internal-only">內部留痕 / 報價紀錄</div>
+        <div class="audit-panel internal-only" id="quoteMetaDisplay">
+            <div class="audit-row"><span>報價紀錄</span><strong id="metaQuoteId">尚未儲存</strong></div>
+            <div class="audit-row"><span>建立人</span><strong id="metaCreatedBy">--</strong></div>
+            <div class="audit-row"><span>最後修改</span><strong id="metaUpdatedBy">--</strong></div>
+        </div>
+        <div class="internal-only" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+            <button class="btn-small btn-blue" onclick="saveQuoteRecord()">💾 儲存報價紀錄</button>
+            <button class="btn-small btn-ghost" onclick="downloadQuoteJson()">⬇ 匯出 JSON</button>
+            <button class="btn-small btn-gray" onclick="loadBlankQuote()">＋ 新報價</button>
+            <button class="btn-small btn-yellow" onclick="renderSavedRecords()">↻ 重新整理</button>
+        </div>
+        <div class="record-list internal-only" id="savedRecordsList">
+            <div style="padding:10px; color:#888; font-size:12px;">尚無本機報價紀錄</div>
+        </div>
+
     </div>
 
     <div class="preview-container">
@@ -317,21 +436,202 @@
     <script>
         /* === 安全防護腳本 === */
         document.onkeydown = function(e) {
-            // 阻擋 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-            if(event.keyCode == 123) { return false; }
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; }
+            e = e || window.event;
+            if(e.keyCode == 123) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        };
+
+        /* === ERP Portal / SSO 綁定層 === */
+        const ERP_SESSION_KEY = 'HG_ERP_SESSION_V1';
+        const QUOTE_RECORDS_KEY = 'HG_QUOTATION_RECORDS_V1';
+        const QUOTE_AUDIT_KEY = 'HG_QUOTATION_AUDIT_V1';
+
+        const EMPLOYEE_DIRECTORY = [
+            { name: '楊翊晟', role: '執行長', roleCode: 'CEO', isManager: true, canApprove: true },
+            { name: '張淑玲', role: '主管', roleCode: 'Manager', isManager: true, canApprove: true },
+            { name: '李宜婷', role: '主管', roleCode: 'Manager', isManager: true, canApprove: true },
+            { name: '呂蕙蓁', role: '一般助理', roleCode: 'Agent', isManager: false, canApprove: false },
+            { name: '楊雅婷', role: '會計', roleCode: 'Accounting', isManager: false, canApprove: false },
+            { name: '周美汎', role: '一般助理', roleCode: 'Agent', isManager: false, canApprove: false }
+        ];
+
+        let erpSession = null;
+        let quoteMeta = createEmptyQuoteMeta();
+
+        function createEmptyQuoteMeta() {
+            return {
+                quoteId: '',
+                createdBy: '',
+                createdRole: '',
+                createdAt: '',
+                updatedBy: '',
+                updatedRole: '',
+                updatedAt: '',
+                version: 0,
+                auditTrail: []
+            };
+        }
+
+        function normalizeName(v) { return String(v || '').trim().replace(/\s+/g, ''); }
+        function resolveEmployeeByName(name, roleCodeFromSession='') {
+            const key = normalizeName(name);
+            return EMPLOYEE_DIRECTORY.find(e => normalizeName(e.name) === key) || {
+                name: name || '未綁定使用者',
+                role: roleCodeFromSession || '單機模式',
+                roleCode: roleCodeFromSession || 'Standalone',
+                isManager: false,
+                canApprove: false
+            };
+        }
+
+        function sessionFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('hg_sso') !== '1' && !params.get('hg_name')) return null;
+            const name = params.get('hg_name') || params.get('hg_user') || '';
+            const roleCode = params.get('hg_roleCode') || '';
+            const emp = resolveEmployeeByName(name, roleCode);
+            return {
+                type: 'HG_ERP_SESSION',
+                version: 1,
+                username: params.get('hg_user') || emp.name,
+                name: emp.name,
+                role: params.get('hg_role') || emp.role,
+                roleCode: roleCode || emp.roleCode,
+                isManager: !!emp.isManager,
+                canReview: !!emp.canApprove,
+                sessionId: params.get('hg_session') || '',
+                source: 'url'
+            };
+        }
+
+        function sessionFromStorage() {
+            try {
+                const raw = localStorage.getItem(ERP_SESSION_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !parsed.name) return null;
+                const emp = resolveEmployeeByName(parsed.name, parsed.roleCode);
+                return {
+                    ...parsed,
+                    name: emp.name,
+                    role: parsed.role || emp.role,
+                    roleCode: parsed.roleCode || emp.roleCode,
+                    isManager: !!(parsed.isManager || emp.isManager),
+                    canReview: !!(parsed.canReview || emp.canApprove),
+                    source: 'localStorage'
+                };
+            } catch(e) { return null; }
+        }
+
+        function getCurrentOperator() {
+            if (erpSession && erpSession.name) return erpSession;
+            return {
+                name: '未綁定使用者',
+                role: '單機模式',
+                roleCode: 'Standalone',
+                isManager: false,
+                canReview: false,
+                source: 'standalone'
+            };
+        }
+
+        function applyPortalSession(session) {
+            if (!session || !session.name) return;
+            const emp = resolveEmployeeByName(session.name, session.roleCode);
+            erpSession = {
+                ...session,
+                name: emp.name,
+                role: session.role || emp.role,
+                roleCode: session.roleCode || emp.roleCode,
+                isManager: !!(session.isManager || emp.isManager),
+                canReview: !!(session.canReview || emp.canApprove)
+            };
+            try {
+                localStorage.setItem(ERP_SESSION_KEY, JSON.stringify(erpSession));
+                localStorage.setItem('hg_current_operator', erpSession.name);
+                localStorage.setItem('hg_current_role', erpSession.roleCode);
+            } catch(e) {}
+            updatePortalBanner();
+            autoFillContactFromSession();
+            updateMetaDisplay();
+        }
+
+        window.addEventListener('message', (event) => {
+            const data = event.data || {};
+            if (data.type === 'HG_ERP_SESSION' && data.session) {
+                applyPortalSession({ ...data.session, source: 'postMessage' });
+            }
+        });
+
+        function initPortalBinding() {
+            const s = sessionFromUrl() || sessionFromStorage();
+            if (s) applyPortalSession(s);
+            else updatePortalBanner();
+            // 主動通知父層：模組已可接收 Session
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'HG_MODULE_READY', module: 'quotation' }, '*');
+                }
+            } catch(e) {}
+        }
+
+        function updatePortalBanner() {
+            const op = getCurrentOperator();
+            const user = document.getElementById('portalUserName');
+            const role = document.getElementById('portalUserRole');
+            const hint = document.getElementById('portalHint');
+            if (user) user.innerText = op.name || '未綁定總控制管理';
+            if (role) role.innerText = op.role || op.roleCode || '單機模式';
+            if (hint) {
+                hint.innerText = op.source === 'standalone'
+                    ? '目前為單機模式；從總控制管理進入時，會自動帶入登入者並寫入建立/修改紀錄。'
+                    : '已綁定總控制管理登入身份；本報價的建立人與修改人會自動留痕。';
+            }
+        }
+
+        function autoFillContactFromSession() {
+            const op = getCurrentOperator();
+            const contact = document.getElementById('inputContact');
+            if (!contact || !op.name || op.name === '未綁定使用者') return;
+            const current = String(contact.value || '').trim();
+            // 保守處理：只有空白或仍為預設楊翊晟時才自動帶入，避免覆蓋手動輸入
+            if (!current || current === '楊翊晟地政士') {
+                contact.value = op.name === '楊翊晟' ? '楊翊晟地政士' : op.name;
+                updatePreview();
+            }
         }
 
         /* === 報價單邏輯 === */
-        // 自動帶入今天日期與下個月底
-        document.getElementById('inputDate').valueAsDate = new Date();
-        let d = new Date();
+        const today = new Date();
+        document.getElementById('inputDate').valueAsDate = today;
+        const d = new Date();
         document.getElementById('inputValidDate').valueAsDate = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
-        // 修改：預設為空項目，而非特定建案
         let items = [{ desc: '', qty: 1, price: 0 }];
+
+        function escapeHTML(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function generateQuoteId() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth()+1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+            return `QT-${y}${m}${dd}-${rand}`;
+        }
+
+        function nowText() {
+            return new Date().toLocaleString('zh-TW', { hour12: false });
+        }
 
         function renderInputItems() {
             const container = document.getElementById('itemsContainer');
@@ -340,9 +640,9 @@
                 const div = document.createElement('div');
                 div.className = 'item-row';
                 div.innerHTML = `
-                    <input type="text" placeholder="品項" value="${item.desc}" oninput="updateItem(${index}, 'desc', this.value)">
-                    <input type="number" placeholder="數" value="${item.qty}" oninput="updateItem(${index}, 'qty', this.value)">
-                    <input type="number" placeholder="價" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
+                    <input type="text" placeholder="品項" value="${escapeHTML(item.desc)}" oninput="updateItem(${index}, 'desc', this.value)">
+                    <input type="number" placeholder="數" value="${escapeHTML(item.qty)}" oninput="updateItem(${index}, 'qty', this.value)">
+                    <input type="number" placeholder="價" value="${escapeHTML(item.price)}" oninput="updateItem(${index}, 'price', this.value)">
                     <button class="btn btn-red" onclick="removeItem(${index})">X</button>
                 `;
                 container.appendChild(div);
@@ -355,25 +655,39 @@
         function updateItem(index, field, value) {
             items[index][field] = (field === 'qty' || field === 'price') ? (parseFloat(value) || 0) : value;
             calculateTotal();
+            updateMetaDisplay();
         }
 
         function formatMoney(amount) {
+            amount = Number(amount) || 0;
             return 'NT$' + amount.toFixed(0).replace(/\d(?=(\d{3})+$)/g, '$&,');
         }
 
-        function calculateTotal() {
+        function getTotals() {
             let subtotal = 0;
+            items.forEach(item => subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0));
+            const discount = parseFloat(document.getElementById('inputDiscount').value) || 0;
+            return { subtotal, discount, total: subtotal - discount };
+        }
+
+        function calculateTotal() {
+            const totals = getTotals();
             const tbody = document.getElementById('displayItems');
             tbody.innerHTML = '';
             items.forEach(item => {
-                const amount = item.qty * item.price;
-                subtotal += amount;
-                tbody.innerHTML += `<tr><td>${item.desc}</td><td class="text-center">${item.qty}</td><td class="text-right">${formatMoney(item.price)}</td><td class="text-right">${formatMoney(amount)}</td></tr>`;
+                const qty = Number(item.qty) || 0;
+                const price = Number(item.price) || 0;
+                const amount = qty * price;
+                tbody.innerHTML += `<tr><td>${escapeHTML(item.desc)}</td><td class="text-center">${escapeHTML(qty)}</td><td class="text-right">${formatMoney(price)}</td><td class="text-right">${formatMoney(amount)}</td></tr>`;
             });
-            const discount = parseFloat(document.getElementById('inputDiscount').value) || 0;
-            document.getElementById('displaySubtotal').innerText = formatMoney(subtotal);
-            document.getElementById('displayDiscount').innerText = '-' + formatMoney(discount);
-            document.getElementById('displayTotal').innerText = formatMoney(subtotal - discount);
+            document.getElementById('displaySubtotal').innerText = formatMoney(totals.subtotal);
+            document.getElementById('displayDiscount').innerText = '-' + formatMoney(totals.discount);
+            document.getElementById('displayTotal').innerText = formatMoney(totals.total);
+
+            const reason = document.getElementById('inputDiscountReason');
+            const warn = document.getElementById('discountWarning');
+            if (warn) warn.style.display = (totals.discount > 0 && reason && !reason.value.trim()) ? 'block' : 'none';
+            updateMetaDisplay();
         }
 
         function updatePreview() {
@@ -385,7 +699,211 @@
             });
             calculateTotal();
         }
+
+        function collectQuoteData() {
+            const totals = getTotals();
+            return {
+                subject: document.getElementById('inputSubject').value || '',
+                quoteDate: document.getElementById('inputDate').value || '',
+                validDate: document.getElementById('inputValidDate').value || '',
+                companyAddress: document.getElementById('inputCompanyAddress').value || '',
+                contact: document.getElementById('inputContact').value || '',
+                phone: document.getElementById('inputPhone').value || '',
+                client: document.getElementById('inputClient').value || '',
+                clientAddress: document.getElementById('inputClientAddress').value || '',
+                items: JSON.parse(JSON.stringify(items)),
+                discount: totals.discount,
+                discountReason: document.getElementById('inputDiscountReason')?.value || '',
+                subtotal: totals.subtotal,
+                total: totals.total,
+                notes: document.getElementById('inputNotes').value || '',
+                meta: quoteMeta
+            };
+        }
+
+        function validateBeforeSave() {
+            const totals = getTotals();
+            const reason = document.getElementById('inputDiscountReason')?.value.trim() || '';
+            if (totals.discount > 0 && !reason) {
+                alert('有折扣金額時，請先填寫「折扣原因 / 主管核准備註」。');
+                return false;
+            }
+            return true;
+        }
+
+        function getRecords() {
+            try { return JSON.parse(localStorage.getItem(QUOTE_RECORDS_KEY) || '[]'); } catch(e) { return []; }
+        }
+
+        function setRecords(records) {
+            localStorage.setItem(QUOTE_RECORDS_KEY, JSON.stringify(records));
+        }
+
+        function appendGlobalAudit(entry) {
+            try {
+                const logs = JSON.parse(localStorage.getItem(QUOTE_AUDIT_KEY) || '[]');
+                logs.unshift(entry);
+                localStorage.setItem(QUOTE_AUDIT_KEY, JSON.stringify(logs.slice(0, 300)));
+            } catch(e) {}
+        }
+
+        function saveQuoteRecord() {
+            if (!validateBeforeSave()) return;
+            const op = getCurrentOperator();
+            const now = new Date().toISOString();
+            const isNew = !quoteMeta.quoteId;
+            if (isNew) {
+                quoteMeta.quoteId = generateQuoteId();
+                quoteMeta.createdBy = op.name;
+                quoteMeta.createdRole = op.role || op.roleCode;
+                quoteMeta.createdAt = now;
+                quoteMeta.version = 1;
+            } else {
+                quoteMeta.version = (Number(quoteMeta.version) || 1) + 1;
+            }
+            quoteMeta.updatedBy = op.name;
+            quoteMeta.updatedRole = op.role || op.roleCode;
+            quoteMeta.updatedAt = now;
+            const data = collectQuoteData();
+            const auditEntry = {
+                time: now,
+                timeText: nowText(),
+                operator: op.name,
+                role: op.role || op.roleCode,
+                action: isNew ? '建立報價' : '修改報價',
+                quoteId: quoteMeta.quoteId,
+                subject: data.subject,
+                total: data.total,
+                discount: data.discount,
+                discountReason: data.discountReason
+            };
+            quoteMeta.auditTrail = quoteMeta.auditTrail || [];
+            quoteMeta.auditTrail.unshift(auditEntry);
+            data.meta = quoteMeta;
+
+            const records = getRecords();
+            const idx = records.findIndex(r => r.meta && r.meta.quoteId === quoteMeta.quoteId);
+            if (idx >= 0) records[idx] = data;
+            else records.unshift(data);
+            setRecords(records.slice(0, 200));
+            appendGlobalAudit(auditEntry);
+            updateMetaDisplay();
+            renderSavedRecords();
+            alert('報價紀錄已儲存，建立/修改人已留痕。');
+        }
+
+        function updateMetaDisplay() {
+            const idEl = document.getElementById('metaQuoteId');
+            const cEl = document.getElementById('metaCreatedBy');
+            const uEl = document.getElementById('metaUpdatedBy');
+            if (idEl) idEl.innerText = quoteMeta.quoteId || '尚未儲存';
+            if (cEl) cEl.innerText = quoteMeta.createdBy ? `${quoteMeta.createdBy}｜${quoteMeta.createdAt ? new Date(quoteMeta.createdAt).toLocaleString('zh-TW', {hour12:false}) : ''}` : '--';
+            if (uEl) uEl.innerText = quoteMeta.updatedBy ? `${quoteMeta.updatedBy}｜v${quoteMeta.version || 1}` : '--';
+        }
+
+        function renderSavedRecords() {
+            const list = document.getElementById('savedRecordsList');
+            if (!list) return;
+            const records = getRecords().filter(r => !r.archived);
+            if (!records.length) {
+                list.innerHTML = '<div style="padding:10px; color:#888; font-size:12px;">尚無本機報價紀錄</div>';
+                return;
+            }
+            list.innerHTML = records.slice(0, 20).map((r, i) => {
+                const meta = r.meta || {};
+                return `
+                    <div class="record-item">
+                        <div>
+                            <div class="record-title">${escapeHTML(r.subject || r.client || meta.quoteId || '未命名報價')}</div>
+                            <div class="record-meta">${escapeHTML(meta.quoteId || '--')}｜${escapeHTML(meta.updatedBy || meta.createdBy || '--')}｜${formatMoney(r.total || 0)}</div>
+                        </div>
+                        <div class="record-actions">
+                            <button class="btn-small btn-gray" onclick="loadQuoteRecord('${escapeHTML(meta.quoteId)}')">載入</button>
+                            <button class="btn-small btn-ghost" onclick="archiveQuoteRecord('${escapeHTML(meta.quoteId)}')">封存</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadQuoteRecord(quoteId) {
+            const record = getRecords().find(r => r.meta && r.meta.quoteId === quoteId);
+            if (!record) return alert('找不到此報價紀錄。');
+            document.getElementById('inputSubject').value = record.subject || '';
+            document.getElementById('inputDate').value = record.quoteDate || '';
+            document.getElementById('inputValidDate').value = record.validDate || '';
+            document.getElementById('inputCompanyAddress').value = record.companyAddress || '';
+            document.getElementById('inputContact').value = record.contact || '';
+            document.getElementById('inputPhone').value = record.phone || '';
+            document.getElementById('inputClient').value = record.client || '';
+            document.getElementById('inputClientAddress').value = record.clientAddress || '';
+            document.getElementById('inputDiscount').value = record.discount || 0;
+            const reason = document.getElementById('inputDiscountReason');
+            if (reason) reason.value = record.discountReason || '';
+            document.getElementById('inputNotes').value = record.notes || '';
+            items = Array.isArray(record.items) && record.items.length ? JSON.parse(JSON.stringify(record.items)) : [{ desc: '', qty: 1, price: 0 }];
+            quoteMeta = record.meta || createEmptyQuoteMeta();
+            renderInputItems();
+            updateMetaDisplay();
+        }
+
+        function archiveQuoteRecord(quoteId) {
+            const op = getCurrentOperator();
+            const reason = prompt('請輸入封存原因：');
+            if (!reason) return;
+            const records = getRecords();
+            const idx = records.findIndex(r => r.meta && r.meta.quoteId === quoteId);
+            if (idx < 0) return;
+            records[idx].archived = true;
+            records[idx].archiveReason = reason;
+            records[idx].archivedBy = op.name;
+            records[idx].archivedAt = new Date().toISOString();
+            setRecords(records);
+            appendGlobalAudit({ time: new Date().toISOString(), timeText: nowText(), operator: op.name, role: op.role || op.roleCode, action: '封存報價', quoteId, reason });
+            renderSavedRecords();
+        }
+
+        function downloadQuoteJson() {
+            const data = collectQuoteData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const safeName = (data.subject || data.client || data.meta.quoteId || 'quotation').replace(/[\\/:*?"<>|]/g, '_');
+            a.download = `${safeName}_報價紀錄.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 500);
+        }
+
+        function loadBlankQuote() {
+            if (!confirm('確定建立新的空白報價？目前未儲存修改可能會遺失。')) return;
+            quoteMeta = createEmptyQuoteMeta();
+            items = [{ desc: '', qty: 1, price: 0 }];
+            document.getElementById('inputSubject').value = '';
+            document.getElementById('inputDate').valueAsDate = new Date();
+            const nd = new Date();
+            document.getElementById('inputValidDate').valueAsDate = new Date(nd.getFullYear(), nd.getMonth() + 1, 0);
+            document.getElementById('inputClient').value = '';
+            document.getElementById('inputClientAddress').value = '';
+            document.getElementById('inputDiscount').value = 0;
+            const reason = document.getElementById('inputDiscountReason');
+            if (reason) reason.value = '';
+            autoFillContactFromSession();
+            renderInputItems();
+            updateMetaDisplay();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initPortalBinding();
+            renderInputItems();
+            renderSavedRecords();
+            updateMetaDisplay();
+        });
+
+        // 先執行一次，支援舊瀏覽器未觸發 DOMContentLoaded 的情境
+        initPortalBinding();
         renderInputItems();
+        renderSavedRecords();
+        updateMetaDisplay();
     </script>
 <!-- Chosen Palette: Existing Red/Blue Professional -->
 <!-- Application Structure Plan: Split view quotation editor with live preview. Left side controls input, right side displays A4 print preview. -->
