@@ -3,911 +3,1325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>宏國/易丞地政 - 專業報價系統</title>
+    <title>宏國｜易丞地政 - 收據系統（主控台綁定留痕版）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&display=swap');
+        
         :root {
-            --primary-color: #c8102e;
-            --secondary-color: #005a87;
-            --gray-text: #555;
-            --bg-color: #f0f2f5;
+            --paper-width: 210mm;
+            --paper-height: 296mm;
         }
 
-        body {
-            font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden; /* 防止整體捲軸，由內部區塊處理 */
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: #e5e7eb; 
+            -webkit-user-select: none; user-select: none;
+            overflow: hidden; 
         }
+        .serif { font-family: 'Noto Serif TC', serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* --- 左側控制面板 --- */
-        .control-panel {
-            width: 400px;
-            min-width: 320px;
-            background: white;
-            padding: 20px;
-            border-right: 1px solid #ddd;
-            overflow-y: auto; /* 獨立捲軸 */
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            /* 讓底部不被切掉 */
-            padding-bottom: 50px; 
+        .input-custom {
+            width: 100%; border: 1px solid #d1d5db; border-radius: 4px;
+            padding: 6px 8px; font-size: 14px; outline: none; transition: 0.2s;
         }
+        .input-custom:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
 
-        .control-panel h2 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-            font-size: 1.5rem;
+        /* --- 智慧選單層級 --- */
+        .autocomplete-suggestions {
+            position: absolute; 
+            border: 1px solid #cbd5e1; 
+            z-index: 9999; 
+            top: 100%; left: 0; right: 0; 
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-height: 250px; 
+            overflow-y: auto; 
+            display: none;
+            border-radius: 0 0 6px 6px;
         }
-
-        .section-title {
-            font-size: 0.9rem;
-            color: var(--secondary-color);
-            font-weight: bold;
-            margin: 20px 0 10px 0;
-            text-transform: uppercase;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; color: #333; }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
-        }
-
-        .btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .btn:hover { background-color: #004466; }
-        .btn-green { background-color: #28a745; margin-top: 5px;}
-        .btn-red { background-color: #dc3545; width: auto; padding: 8px 12px; font-size: 0.9rem;}
-
-        .item-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-        }
-        .item-row input[type="text"] { flex: 2; min-width: 150px; }
-        .item-row input[type="number"] { flex: 1; min-width: 60px; }
-        
-        /* --- 右側預覽區 --- */
-        .preview-container {
-            flex: 1;
-            background: #525659;
-            padding: 40px;
-            overflow: auto; /* 允許捲動 */
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        .a4-page {
-            background: white;
-            width: 210mm;
-            /* 讓高度隨內容延伸，但最少為 A4 高度 */
-            min-height: 297mm; 
-            padding: 15mm 20mm;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        /* --- 報價單排版 --- */
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 3px solid var(--secondary-color); padding-bottom: 15px; }
-        .logos { display: flex; gap: 15px; align-items: center; }
-        .logos img { height: 60px; object-fit: contain; }
-        .company-info { text-align: right; font-size: 12px; color: var(--gray-text); line-height: 1.4; }
-        .company-info h1 { margin: 0 0 5px 0; color: #333; font-size: 16px; font-weight: 800; }
-        
-        .quote-title { text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; letter-spacing: 3px; color: #222; }
-
-        .info-grid { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
-        .client-info, .meta-info { width: 48%; min-width: 250px; }
-        .info-row { display: flex; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 2px; }
-        .info-label { width: 85px; font-weight: bold; color: #444; font-size: 14px; }
-        .info-value { flex: 1; color: #000; font-size: 14px; word-break: break-all; }
-
-        table.quote-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table.quote-table th { background-color: var(--secondary-color); color: white; padding: 8px 10px; text-align: left; font-size: 14px; border: 1px solid var(--secondary-color); }
-        table.quote-table td { padding: 8px 10px; border: 1px solid #ddd; color: #333; font-size: 14px; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-
-        .totals-section { width: 50%; margin-left: auto; min-width: 200px; }
-        .total-row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; }
-        .total-row.final { background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #333; font-size: 16px; margin-top: 10px; padding: 10px; }
-
-        .notes-section { margin-top: 30px; padding: 15px; border: 1px solid #eee; border-left: 5px solid var(--primary-color); background-color: #fffbfc; font-size: 13px; line-height: 1.6; white-space: pre-wrap; text-align: left; }
-        
-        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; }
-        .sig-box { width: 40%; border-top: 1px solid #333; padding-top: 10px; text-align: center; font-size: 14px; }
-
-
-        /* === ERP Portal / Audit Extension v1 === */
-        .internal-only { display: block; }
-        .portal-banner {
-            background: linear-gradient(135deg, #0f172a, #1e3a8a);
-            color: white;
-            border-radius: 10px;
-            padding: 12px;
-            margin: 10px 0 14px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, .18);
-        }
-        .portal-banner .status-line { display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; }
-        .portal-user { font-weight: 800; font-size: 15px; color: #facc15; }
-        .portal-role {
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.25);
-            border-radius: 999px;
-            padding: 3px 9px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        .portal-hint { margin-top: 6px; font-size: 12px; color: #dbeafe; line-height: 1.45; }
-        .audit-panel {
-            background: #f8fafc;
-            border: 1px solid #dbe4ee;
-            border-radius: 10px;
-            padding: 10px;
-            font-size: 12px;
+        .autocomplete-suggestions div { 
+            padding: 10px 12px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            border-bottom: 1px solid #f1f5f9;
             color: #334155;
         }
-        .audit-row { display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed #dbe4ee; padding:5px 0; }
-        .audit-row:last-child { border-bottom:none; }
-        .btn-small {
-            border: none;
-            border-radius: 6px;
-            padding: 8px 10px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 700;
-            transition: .2s;
-        }
-        .btn-small:hover { transform: translateY(-1px); filter: brightness(.98); }
-        .btn-blue { background:#005a87; color:white; }
-        .btn-gray { background:#e2e8f0; color:#334155; }
-        .btn-yellow { background:#f59e0b; color:white; }
-        .btn-ghost { background:white; color:#005a87; border:1px solid #b6d7e8; }
-        .internal-note {
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            border-left: 4px solid #f97316;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 12px;
-            color: #9a3412;
-            line-height: 1.45;
-            margin-top: 8px;
-        }
-        .record-list {
-            max-height: 160px;
-            overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
-            margin-top: 8px;
-        }
-        .record-item {
-            padding: 8px 10px;
-            border-bottom: 1px solid #f1f5f9;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            align-items: center;
-            font-size: 12px;
-        }
-        .record-item:last-child { border-bottom:none; }
-        .record-title { font-weight: 800; color:#0f172a; }
-        .record-meta { color:#64748b; margin-top:2px; }
-        .record-actions { display:flex; gap:5px; }
-        .danger-text { color:#dc2626; font-size:12px; font-weight:700; display:none; margin-top:4px; }
+        .autocomplete-suggestions div:hover { background-color: #eff6ff; color: #1d4ed8; }
+        
+        .row-wrapper { position: relative; z-index: 10; }
+        .row-wrapper.active-row { z-index: 50; }
 
-        /* --- 手機/平板 RWD 調整 --- */
-        @media screen and (max-width: 900px) {
-            body { flex-direction: column; overflow: auto; height: auto; }
-            
-            .control-panel { 
-                width: 100%; 
-                border-right: none; 
-                border-bottom: 1px solid #ddd; 
-                padding-bottom: 30px;
-            }
-
-            .preview-container {
-                width: 100%;
-                padding: 10px;
-                background: #e0e0e0;
-                display: block; /* 讓內容可滑動 */
-                overflow-x: auto; /* 允許橫向捲動查看報價單 */
-            }
-
-            .a4-page {
-                margin: 0 auto; /* 居中 */
-                /* 在手機上保持 A4 寬度，讓使用者滑動查看，避免擠壓變形 */
-                min-width: 210mm; 
-            }
+        /* A4 紙張設定 */
+        #previewContainer {
+            background-color: #52525b; 
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 20px; overflow-y: auto; height: 100vh;
+        }
+        #paper {
+            width: var(--paper-width); height: var(--paper-height);
+            background: white; box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative; padding: 10mm 12mm; box-sizing: border-box;
+            display: flex; flex-direction: column; transform-origin: top center; overflow: hidden;
+        }
+        #scalableContent {
+            display: flex; flex-direction: column; flex-grow: 1; height: 100%; transform-origin: top center;
         }
 
-        /* --- 列印模式 --- */
+        /* 雙欄佈局 */
+        .columns-container { display: flex; gap: 15px; flex-grow: 1; align-items: flex-start; }
+        .column-box { flex: 1; border: 1px solid #e5e7eb; border-radius: 4px; display: flex; flex-direction: column; }
+        .column-header { padding: 6px 10px; border-bottom: 2px solid; font-weight: bold; font-size: 11pt; background-color: #f9fafb; }
+
+        .bill-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+        .bill-table td { padding: 4px 6px; border-bottom: 1px solid #f3f4f6; }
+        .amount-col { text-align: right; font-family: 'Roboto', sans-serif; font-weight: 500; white-space: nowrap; }
+        
+        .footer-section { margin-top: auto; padding-top: 10px; border-top: 2px solid #374151; }
+        .stamp-box {
+            border: 3px double #ef4444; color: #ef4444; padding: 4px 8px;
+            display: inline-block; transform: rotate(-2deg);
+            font-family: 'Noto Serif TC', serif; background: rgba(255,255,255,0.95);
+            min-width: 110px; text-align: center;
+        }
+
+        /* --- 關鍵修復：印章隱藏邏輯 --- */
+        /* 當父容器 #paper 擁有 .hide-stamp 類別時，隱藏印章 */
+        #paper.hide-stamp .stamp-visual {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+
+        /* --- ERP Portal / Audit 留痕介面 --- */
+        .erp-session-card {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border: 1px solid rgba(148,163,184,.35);
+            color: #fff;
+            border-radius: .75rem;
+            padding: .75rem;
+            margin-top: .75rem;
+            box-shadow: 0 8px 20px rgba(15,23,42,.18);
+        }
+        .erp-session-row { display:flex; justify-content:space-between; gap:.5rem; align-items:center; font-size:12px; margin-top:4px; }
+        .erp-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; background:rgba(250,204,21,.14); color:#fde68a; border:1px solid rgba(250,204,21,.28); font-weight:700; }
+        .erp-audit-note {
+            margin-top: .75rem; padding:.65rem; border-radius:.65rem;
+            background:#f8fafc; border:1px solid #e2e8f0; color:#334155; font-size:12px;
+        }
+        .erp-action-grid { display:grid; grid-template-columns: 1fr 1fr; gap:.5rem; margin-top:.75rem; }
+        .erp-mini-btn { border:0; border-radius:.55rem; padding:.55rem .6rem; font-size:12px; font-weight:800; cursor:pointer; }
+        .erp-mini-btn.blue { background:#dbeafe; color:#1e40af; }
+        .erp-mini-btn.slate { background:#e2e8f0; color:#334155; }
+        .erp-mini-btn.red { background:#fee2e2; color:#991b1b; }
+        .erp-mini-btn.green { background:#dcfce7; color:#166534; }
+        .audit-modal-panel { background:white; width:min(960px, 94vw); max-height:86vh; border-radius:14px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,.35); display:flex; flex-direction:column; }
+        .audit-modal-header { padding:14px 18px; background:#0f172a; color:white; display:flex; align-items:center; justify-content:space-between; }
+        .audit-modal-body { padding:14px; overflow:auto; background:#f8fafc; }
+        .receipt-history-table { width:100%; border-collapse:collapse; font-size:13px; background:white; border-radius:10px; overflow:hidden; }
+        .receipt-history-table th { background:#e2e8f0; color:#334155; text-align:left; padding:10px; white-space:nowrap; }
+        .receipt-history-table td { border-top:1px solid #e5e7eb; padding:10px; vertical-align:top; }
+        .receipt-history-table button { padding:4px 8px; border-radius:6px; border:0; font-size:12px; font-weight:700; cursor:pointer; margin-right:4px; }
+        .audit-status-active { color:#166534; font-weight:800; }
+        .audit-status-archived { color:#991b1b; font-weight:800; }
+
         @media print {
-            body { display: block; background: white; height: auto; overflow: visible; }
-            .control-panel { display: none; }
-            .internal-only { display: none !important; }
-            .preview-container { display: block; padding: 0; background: white; margin: 0; width: 100%; overflow: visible; }
-            .a4-page { width: 100%; box-shadow: none; padding: 0; margin: 0; min-height: 0; min-width: 0; border: none; }
-            @page { margin: 10mm 15mm; }
+            @page { size: A4; margin: 0; }
+            body * { visibility: hidden; }
+            #previewContainer, #previewContainer * { visibility: visible; }
+            #previewContainer {
+                position: absolute; left: 0; top: 0; padding: 0; margin: 0;
+                width: 210mm; height: 296mm; background: white; overflow: hidden; display: block;
+            }
+            #paper { box-shadow: none; margin: 0; transform: none !important; width: 100%; height: 100%; }
+            .no-print { display: none !important; }
+            
+            /* 列印時強制套用隱藏邏輯 */
+            #paper.hide-stamp .stamp-visual { display: none !important; }
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> 
-<div class="control-panel">
-        <h2>🔒 宏國/易丞 報價系統</h2>
-        <div style="font-size:12px; color:#888; margin-bottom:10px;">安全模式：已啟用防拷貝保護</div>
+<body class="flex flex-col md:flex-row h-screen" onclick="closeAllLists(event)">
 
-        <div class="portal-banner internal-only" id="portalBanner">
-            <div class="status-line">
+    <div class="w-full md:w-[400px] bg-white border-r border-gray-300 flex flex-col z-20 shadow-2xl no-print h-full">
+        <div class="p-4 bg-slate-800 text-white shrink-0">
+            <h2 class="font-bold text-xl mb-4 text-center tracking-wider"><i class="fas fa-file-invoice-dollar mr-2"></i>專業結算系統 V2</h2>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <button onclick="document.getElementById('caseInput').click()" class="bg-orange-600 hover:bg-orange-500 text-white py-2.5 rounded shadow font-bold transition flex items-center justify-center gap-2">
+                    <i class="fas fa-folder-open"></i> 讀取舊檔
+                </button>
+                <input type="file" id="caseInput" class="hidden" accept=".json" onchange="loadCase(this)">
+                <button onclick="saveCase()" class="bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded shadow font-bold transition flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i> 儲存收據
+                </button>
+            </div>
+            <button onclick="resetCase()" class="w-full bg-slate-700 hover:bg-red-600 text-gray-300 hover:text-white py-1.5 rounded text-xs transition border border-slate-600">
+                <i class="fas fa-redo mr-1"></i> 開啟新案件 (清空)
+            </button>
+            <div id="erpSessionCard" class="erp-session-card">
+                <div class="flex justify-between items-center">
+                    <div class="font-bold text-sm"><i class="fas fa-user-shield mr-1 text-yellow-300"></i> ERP 單一登入</div>
+                    <span id="erpSessionMode" class="erp-pill">單機模式</span>
+                </div>
+                <div class="erp-session-row"><span>目前操作人</span><b id="erpOperatorName">未綁定</b></div>
+                <div class="erp-session-row"><span>角色</span><b id="erpOperatorRole">未指定</b></div>
+                <div class="erp-session-row"><span>收據編號</span><b id="erpReceiptId">尚未建立</b></div>
+            </div>
+            <div class="erp-audit-note">
+                <b>內部留痕：</b><br>
+                <span id="erpAuditInfo">從總控制管理進入時，將自動綁定登入者；直接開啟則為單機測試模式。</span>
+            </div>
+            <div class="erp-action-grid">
+                <button class="erp-mini-btn blue" onclick="saveReceiptRecordOnly()"><i class="fas fa-database mr-1"></i> 儲存內部紀錄</button>
+                <button class="erp-mini-btn slate" onclick="openReceiptHistory()"><i class="fas fa-clock-rotate-left mr-1"></i> 收據紀錄</button>
+                <button class="erp-mini-btn green" onclick="exportReceiptRecords()"><i class="fas fa-file-export mr-1"></i> 匯出紀錄</button>
+                <button class="erp-mini-btn red" onclick="archiveCurrentReceipt()"><i class="fas fa-box-archive mr-1"></i> 作廢/封存</button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 hide-scrollbar">
+            <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
+                <div class="flex gap-2 mb-2">
+                    <label class="flex-1 cursor-pointer border rounded p-1.5 flex justify-center hover:bg-blue-50 peer-checked:bg-blue-100 transition">
+                        <input type="radio" name="firm" value="yicheng" checked onchange="updateView()" class="mr-2"> 易丞
+                    </label>
+                    <label class="flex-1 cursor-pointer border rounded p-1.5 flex justify-center hover:bg-green-50 transition">
+                        <input type="radio" name="firm" value="hongguo" onchange="updateView()" class="mr-2"> 宏國
+                    </label>
+                </div>
+                <div class="flex gap-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-100">
+                    <label class="flex-1 flex items-center justify-center cursor-pointer"><input type="radio" name="clientType" value="individual" checked onchange="calculateTotal()" class="mr-1"> 個人</label>
+                    <label class="flex-1 flex items-center justify-center cursor-pointer"><input type="radio" name="clientType" value="company" onchange="calculateTotal()" class="mr-1"> 公司</label>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="date" id="inputDate" class="input-custom" title="日期">
+                    <input type="text" id="inputClientId" class="input-custom" placeholder="統編 (選填)">
+                </div>
+                <input type="text" id="inputClient" class="input-custom" placeholder="客戶抬頭">
+                <textarea id="inputTarget" rows="2" class="input-custom" placeholder="案件標的 / 地址"></textarea>
+            </div>
+
+            <div class="border-t pt-2">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-gray-700">A. 代辦費</h3>
+                    <div class="flex gap-1">
+                        <button onclick="openOptionManager('service')" class="px-2 py-1 bg-gray-200 rounded text-xs"><i class="fas fa-cog"></i></button>
+                        <button onclick="addItem('service')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">+ 新增</button>
+                    </div>
+                </div>
+                <div id="serviceItems" class="space-y-1"></div>
+                <div class="mt-2 flex items-center gap-2 bg-green-50 p-2 rounded border border-green-200">
+                    <span class="text-green-700 text-xs font-bold">折扣</span>
+                    <input type="text" id="discountName" value="老客戶優惠" class="flex-1 text-xs border rounded p-1">
+                    <input type="text" id="discountAmount" value="0" onchange="applyMath(this)" class="w-16 text-right text-xs border rounded p-1">
+                </div>
+            </div>
+
+            <div class="border-t pt-2">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-gray-700">B. 代納規費</h3>
+                    <div class="flex gap-1">
+                        <button onclick="openOptionManager('tax')" class="px-2 py-1 bg-gray-200 rounded text-xs"><i class="fas fa-cog"></i></button>
+                        <button onclick="addItem('tax')" class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">+ 新增</button>
+                    </div>
+                </div>
+                <div id="taxItems" class="space-y-1"></div>
+            </div>
+
+            <div class="border-t pt-2 bg-yellow-50 p-2 rounded">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold w-16">找補</span>
+                        <input type="text" id="adjustName" value="稅費找補" class="flex-1 text-xs border rounded p-1">
+                        <input type="text" id="adjustAmount" value="0" onchange="applyMath(this)" class="w-16 text-right text-xs border rounded p-1">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold w-16 text-red-600">預收</span>
+                        <input type="text" value="預收規費" class="flex-1 text-xs border rounded p-1 bg-gray-100" disabled>
+                        <input type="text" id="prepayAmount" value="0" onchange="applyMath(this)" class="w-16 text-right text-xs border rounded p-1 text-red-600 font-bold">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t pt-2 pb-10">
+                <label class="text-xs font-bold text-gray-500">備註事項</label>
+                <textarea id="inputNotes" rows="4" class="input-custom text-xs">◎若要辦理地價稅自用，請於9月22日前申請。
+◎若要辦理房屋稅自用，請於3月22日前申請。
+◎辦理自用稅率需先將戶籍遷入。
+◎上列地政士代辦費，本事務所列為執行業務收入，若付款人為中華民國境內之公司行號或機關團體，請依法扣繳10%稅款 ，並開立扣繳憑單予本事務所。</textarea>
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border-t shrink-0">
+             <div class="flex justify-center gap-4 mb-2 text-xs">
+                <label class="flex items-center cursor-pointer select-none">
+                    <input type="radio" name="printMode" value="pdf" checked onchange="toggleStampMode()" class="mr-1"> 
+                    存檔PDF (有章)
+                </label>
+                <label class="flex items-center cursor-pointer select-none">
+                    <input type="radio" name="printMode" value="print" onchange="toggleStampMode()" class="mr-1"> 
+                    直接列印 (無章)
+                </label>
+            </div>
+            <button onclick="window.print()" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg shadow font-bold text-lg transition">
+                <i class="fas fa-print mr-2"></i>輸出 / 列印
+            </button>
+        </div>
+    </div>
+
+    <div id="previewContainer" class="flex-1">
+        <div id="paper">
+            <div id="scalableContent">
+                <div id="headerBorder" class="flex justify-between items-end border-b-4 pb-2 mb-3">
+                    <div>
+                        <h1 id="firmName" class="text-4xl font-black serif tracking-widest leading-none">易丞地政士事務所</h1>
+                        <div class="text-[11px] tracking-[0.4em] text-gray-500 mt-1 font-bold">PROFESSIONAL LAND AGENT</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-gray-800 leading-none">各項規費及勞務費明細表</div>
+                        <div class="text-xs text-gray-600 font-medium mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block">
+                            日期：<span id="displayDate"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-300 mb-3 text-sm">
+                    <div class="flex border-b border-gray-300">
+                        <div class="w-24 bg-gray-100 p-1.5 font-bold flex items-center justify-center border-r border-gray-300 text-gray-700">委託客戶</div>
+                        <div class="flex-1 p-1.5 font-bold relative text-lg flex items-center">
+                            <span id="displayClient"></span>
+                            <span id="displayClientId" class="text-[10px] text-gray-500 ml-2 font-normal"></span>
+                        </div>
+                        <div class="w-24 bg-gray-100 p-1.5 font-bold flex items-center justify-center border-l border-r border-gray-300 text-gray-700">客戶類型</div>
+                        <div class="w-24 p-1.5 flex items-center justify-center" id="displayClientType">個人</div>
+                    </div>
+                    <div class="flex">
+                        <div class="w-24 bg-gray-100 p-1.5 font-bold flex items-center justify-center border-r border-gray-300 text-gray-700">案件標的</div>
+                        <div class="flex-1 p-1.5 leading-relaxed whitespace-pre-wrap" id="displayTarget"></div>
+                    </div>
+                </div>
+
+                <div class="columns-container">
+                    <div class="column-box" id="colBoxService">
+                        <div class="column-header" id="headerService">A. 地政士代辦費 (含稅)</div>
+                        <div class="flex-1 p-1">
+                            <table class="bill-table">
+                                <tbody id="displayServiceRows"></tbody>
+                                <tbody id="displayDiscountRow" class="text-green-700 hidden">
+                                    <tr>
+                                        <td class="pl-2 font-bold"><i class="fas fa-minus-circle text-[10px] mr-1"></i><span id="dName">折扣</span></td>
+                                        <td class="amount-col font-bold">- <span id="dAmount">0</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bg-gray-50 border-t border-gray-300 p-2 flex justify-between font-bold text-sm">
+                            <span>代辦費小計</span>
+                            <span id="totalService">$0</span>
+                        </div>
+                    </div>
+
+                    <div class="column-box" id="colBoxTax">
+                        <div class="column-header" id="headerTax">B. 代納規費 (實支實付)</div>
+                        <div class="flex-1 p-1">
+                            <table class="bill-table">
+                                <tbody id="displayTaxRows"></tbody>
+                            </table>
+                        </div>
+                        <div class="bg-gray-50 border-t border-gray-300 p-2 flex justify-between font-bold text-sm">
+                            <span>代納規費小計</span>
+                            <span id="totalTax">$0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-6 mt-2 text-sm px-2">
+                    <div id="rowAdjust" class="hidden font-bold">
+                        <span id="txtAdjustName" class="mr-2">稅費找補:</span>
+                        <span id="txtAdjustAmount">$0</span>
+                    </div>
+                    <div id="rowPrepay" class="hidden text-red-600 font-bold">
+                        <span class="mr-2">減：預收規費:</span>
+                        <span id="txtPrepayAmount">-$0</span>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1 pr-4 flex gap-4">
+                            <div class="flex-1 text-[10px] text-gray-600 leading-tight">
+                                <div class="font-bold mb-1">備註 / 注意事項：</div>
+                                <div id="displayNotes" class="whitespace-pre-wrap border border-gray-200 p-1.5 rounded bg-gray-50"></div>
+                                <div class="mt-1 text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i><span id="firmAddress"></span></div>
+                            </div>
+                            
+                            <div class="stamp-visual flex flex-col items-center justify-center shrink-0">
+                                <div class="stamp-box">
+                                    <div class="stamp-inner">
+                                        <h4 class="font-black text-base mb-1" id="stampFirmName">易丞地政士</h4>
+                                        <div class="text-[9px] font-bold border-t border-b border-red-400 py-0.5 my-0.5">勞務費收據/印花總繳</div>
+                                        <div class="text-[9px] font-bold leading-tight">
+                                            統編：<span id="stampId"></span><br>
+                                            負責人：<span id="stampAgent"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-[220px] text-right">
+                             <div id="normalTotalBox">
+                                <div class="text-gray-500 text-xs font-bold">總計實收金額 (Total)</div>
+                                <div class="font-black text-4xl text-gray-800 serif leading-snug" id="grandTotal">$0</div>
+                            </div>
+
+                             <div id="companyTaxBox" class="hidden w-full text-sm">
+                                <div class="flex justify-between text-gray-500"><span>應收總計:</span><span id="rawTotalAmount" class="font-bold">$0</span></div>
+                                <div class="flex justify-between text-red-600 border-b border-gray-300 pb-1 mb-1"><span>減:10%稅款:</span><span id="taxDeductionAmount" class="font-bold">-$0</span></div>
+                                <div class="flex justify-between items-end">
+                                    <span class="font-bold text-gray-800">實收:</span>
+                                    <span class="font-black text-3xl text-red-600 serif leading-none" id="netTotalAmount">$0</span>
+                                </div>
+                                <div class="text-[9px] text-gray-400 mt-1">* 代辦費>2萬，已扣10%稅款</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="receiptHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 no-print">
+        <div class="audit-modal-panel">
+            <div class="audit-modal-header">
                 <div>
-                    <div style="font-size:11px; opacity:.8; letter-spacing:1px;">ERP 單一登入身份</div>
-                    <div class="portal-user" id="portalUserName">未綁定總控制管理</div>
+                    <div class="font-bold text-lg"><i class="fas fa-receipt mr-2 text-yellow-300"></i> 收據內部紀錄</div>
+                    <div class="text-xs text-slate-300">建立人、修改人、作廢/封存原因皆會保留於本機紀錄；後續可再接總資料庫。</div>
                 </div>
-                <div class="portal-role" id="portalUserRole">單機模式</div>
+                <button onclick="closeReceiptHistory()" class="text-white hover:text-red-300 text-xl"><i class="fas fa-times"></i></button>
             </div>
-            <div class="portal-hint" id="portalHint">
-                若從總控制管理進入，系統會自動帶入登入者；本頁不需要另外登入或選人。
-            </div>
-        </div>
-
-        
-        <div class="section-title">基本資訊</div>
-        <div class="form-group">
-            <label>專案名稱 / 單號</label>
-            <!-- 修改：將預設值清空 -->
-            <input type="text" id="inputSubject" value="" placeholder="請輸入專案名稱" oninput="updatePreview()">
-        </div>
-        <div class="form-group">
-            <label>報價日期</label>
-            <input type="date" id="inputDate" oninput="updatePreview()">
-        </div>
-        <div class="form-group">
-            <label>有效期限</label>
-            <input type="date" id="inputValidDate" oninput="updatePreview()">
-        </div>
-
-        <div class="section-title">我方資訊</div>
-        <div class="form-group">
-            <label>公司地址</label>
-            <input type="text" id="inputCompanyAddress" value="台南市北區文賢路1080巷11號" oninput="updatePreview()">
-        </div>
-        <div class="form-group">
-            <label>聯絡窗口</label>
-            <!-- 修改：將預設值改為 楊翊晟地政士 -->
-            <input type="text" id="inputContact" value="楊翊晟地政士" oninput="updatePreview()">
-        </div>
-        <div class="form-group">
-            <label>聯絡電話</label>
-            <input type="text" id="inputPhone" value="0912-584-498" oninput="updatePreview()">
-        </div>
-
-        <div class="section-title">客戶資訊</div>
-        <div class="form-group">
-            <label>客戶名稱</label>
-            <!-- 修改：將預設值清空，方便輸入新客戶 -->
-            <input type="text" id="inputClient" value="" placeholder="請輸入客戶名稱" oninput="updatePreview()">
-        </div>
-        <div class="form-group">
-            <label>客戶地址</label>
-            <input type="text" id="inputClientAddress" placeholder="請輸入客戶地址" oninput="updatePreview()">
-        </div>
-
-        <div class="section-title">項目列表</div>
-        <div id="itemsContainer"></div>
-        <button class="btn btn-green" onclick="addItem()">+ 新增項目</button>
-
-        <div class="section-title">結算與備註</div>
-        <div class="form-group">
-            <label>折扣金額</label>
-            <!-- 修改：預設歸零 -->
-            <input type="number" id="inputDiscount" value="0" oninput="calculateTotal()">
-        </div>
-
-        <div class="form-group internal-only">
-            <label>折扣原因 / 主管核准備註（內部留痕，不列印）</label>
-            <textarea id="inputDiscountReason" rows="3" placeholder="若有折扣，請填寫原因；大幅折扣建議由主管或 CEO 核准。" oninput="updatePreview()"></textarea>
-            <div class="danger-text" id="discountWarning">⚠️ 有折扣時必須填寫折扣原因，避免日後爭議。</div>
-        </div>
-
-
-        <div class="form-group">
-            <label>備註條款</label>
-            <!-- 修改：移除特定金額的說明，改為通用模板 -->
-            <textarea id="inputNotes" rows="6" oninput="updatePreview()">此提案包括下述條件:
-1. 該報價不含政府單位所收取之稅金，由建設公司負擔之費用，並配合建設公司分批交屋時請款。
-2. 匯款資訊：(請在此輸入銀行帳號)</textarea>
-        </div>
-
-        <button class="btn" onclick="window.print()">🖨️ 列印 / 下載 PDF</button>
-
-        <div class="section-title internal-only">內部留痕 / 報價紀錄</div>
-        <div class="audit-panel internal-only" id="quoteMetaDisplay">
-            <div class="audit-row"><span>報價紀錄</span><strong id="metaQuoteId">尚未儲存</strong></div>
-            <div class="audit-row"><span>建立人</span><strong id="metaCreatedBy">--</strong></div>
-            <div class="audit-row"><span>最後修改</span><strong id="metaUpdatedBy">--</strong></div>
-        </div>
-        <div class="internal-only" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-            <button class="btn-small btn-blue" onclick="saveQuoteRecord()">💾 儲存報價紀錄</button>
-            <button class="btn-small btn-ghost" onclick="downloadQuoteJson()">⬇ 匯出 JSON</button>
-            <button class="btn-small btn-gray" onclick="loadBlankQuote()">＋ 新報價</button>
-            <button class="btn-small btn-yellow" onclick="renderSavedRecords()">↻ 重新整理</button>
-        </div>
-        <div class="record-list internal-only" id="savedRecordsList">
-            <div style="padding:10px; color:#888; font-size:12px;">尚無本機報價紀錄</div>
-        </div>
-
-    </div>
-
-    <div class="preview-container">
-        <div class="a4-page">
-            
-            <div class="header">
-                <div class="logos">
-                    <img src="宏國地政封面.jpg" alt="宏國" onerror="this.style.display='none'; document.getElementById('logo-text-hg').style.display='block'">
-                    <img src="未命名2.png" alt="易丞" onerror="this.style.display='none'; document.getElementById('logo-text-yc').style.display='block'">
-                    
-                    <div id="logo-text-hg" style="display:none; font-weight:bold; color:#c8102e; font-size:20px;">HG 宏國地政</div>
-                    <div id="logo-text-yc" style="display:none; font-weight:bold; color:#005a87; font-size:20px; margin-left:10px;">易丞地政士事務所</div>
+            <div class="audit-modal-body">
+                <div class="mb-3 flex gap-2 justify-end">
+                    <button class="erp-mini-btn green" onclick="exportReceiptRecords()"><i class="fas fa-file-export mr-1"></i> 匯出全部紀錄</button>
+                    <button class="erp-mini-btn red" onclick="clearArchivedReceiptRecords()"><i class="fas fa-trash-can mr-1"></i> 清除已封存紀錄</button>
                 </div>
-                <div class="company-info">
-                    <h1>宏國地政士事務所 | 易丞地政士事務所</h1>
-                    <div id="displayCompanyAddress">台南市北區文賢路1080巷11號</div>
-                    <div>TEL: 06-258-2589 | FAX: 06-250-3839</div>
-                    <div>E-MAIL: homegoestate@gmail.com</div>
-                </div>
+                <table class="receipt-history-table">
+                    <thead>
+                        <tr>
+                            <th>狀態</th>
+                            <th>日期</th>
+                            <th>客戶/標的</th>
+                            <th>金額</th>
+                            <th>建立/修改</th>
+                            <th>動作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiptHistoryBody">
+                        <tr><td colspan="6" class="text-center text-slate-400">尚無紀錄</td></tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div class="quote-title">報 價 單 (QUOTATION)</div>
-
-            <div class="info-grid">
-                <div class="client-info">
-                    <div class="info-row"><div class="info-label">客戶名稱：</div><div class="info-value" id="displayClient"></div></div>
-                    <div class="info-row"><div class="info-label">客戶地址：</div><div class="info-value" id="displayClientAddress"></div></div>
-                    <div class="info-row"><div class="info-label">專案名稱：</div><div class="info-value" id="displaySubject"></div></div>
-                </div>
-                <div class="meta-info">
-                    <div class="info-row"><div class="info-label">報價日期：</div><div class="info-value" id="displayDate"></div></div>
-                    <div class="info-row"><div class="info-label">有效期限：</div><div class="info-value" id="displayValidDate"></div></div>
-                    <div class="info-row"><div class="info-label">聯絡窗口：</div><div class="info-value"><span id="displayContact"></span> (<span id="displayPhone"></span>)</div></div>
-                </div>
-            </div>
-
-            <table class="quote-table">
-                <thead>
-                    <tr>
-                        <th style="width: 45%">項目 / 描述</th>
-                        <th class="text-center" style="width: 10%">數量</th>
-                        <th class="text-right" style="width: 20%">單價</th>
-                        <th class="text-right" style="width: 25%">金額</th>
-                    </tr>
-                </thead>
-                <tbody id="displayItems"></tbody>
-            </table>
-
-            <div class="totals-section">
-                <div class="total-row"><span>小計 (Subtotal):</span><span id="displaySubtotal">NT$0</span></div>
-                <div class="total-row"><span>稅金 (Tax 0%):</span><span>NT$0</span></div>
-                <div class="total-row" style="color: var(--primary-color);"><span>折扣 (Discount):</span><span id="displayDiscount">-NT$0</span></div>
-                <div class="total-row final"><span>總計 (Total):</span><span id="displayTotal">NT$0</span></div>
-            </div>
-
-            <div class="notes-section">
-                <strong>備註事項：</strong><br>
-                <span id="displayNotes"></span>
-            </div>
-
-            <div class="signature-section">
-                <div class="sig-box">客戶簽署 (Acceptance)<br><br><br></div>
-                <div class="sig-box">公司授權代表 (Authorized)<br><br><br></div>
-            </div>
-
         </div>
     </div>
 
-    <script>
-        /* === 安全防護腳本 === */
-        document.onkeydown = function(e) {
-            e = e || window.event;
-            if(e.keyCode == 123) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+    <div id="modalManager" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-[400px] shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b bg-gray-100 flex justify-between items-center rounded-t-lg">
+                <h3 class="font-bold text-gray-700" id="modalTitle">管理選單</h3>
+                <button onclick="closeOptionManager()" class="text-gray-500 hover:text-black"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newOptionInput" class="flex-1 border rounded px-2 py-1 text-sm" placeholder="新選項名稱...">
+                    <button onclick="addNewOptionToManager()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">新增</button>
+                </div>
+                <div id="optionListContainer" class="space-y-1"></div>
+            </div>
+            <div class="p-3 border-t bg-gray-100 text-right rounded-b-lg">
+                <button onclick="closeOptionManager()" class="bg-gray-800 text-white px-4 py-1.5 rounded text-sm font-bold">完成</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // =========================================================
+    // ERP Portal Bridge｜總控制管理單一登入綁定＋收據留痕
+    // =========================================================
+    const ERP_RECEIPT_RECORDS_KEY = 'HG_RECEIPT_RECORDS_V1';
+    const ERP_SESSION_KEYS = ['HG_ERP_SESSION_V1', 'HG_PORTAL_SESSION', 'homego_erp_session'];
+    const ERP_ROLE_MAP = {
+        '楊翊晟': 'CEO',
+        '張淑玲': '主管',
+        '李宜婷': '主管',
+        '呂蕙蓁': '一般助理',
+        '楊雅婷': '會計',
+        '周美汎': '一般助理'
+    };
+
+    let portalUser = null;
+    let currentReceiptId = null;
+    let currentReceiptCreatedMeta = null;
+    let auditTrail = [];
+
+    function generateReceiptId() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `RCPT-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+
+    function normalizePortalPayload(raw) {
+        if (!raw) return null;
+        let obj = raw;
+        if (typeof raw === 'string') {
+            try { obj = JSON.parse(raw); } catch(e) { return null; }
+        }
+        const name = obj.name || obj.userName || obj.employeeName || obj.operatorName || obj.displayName || obj.username;
+        if (!name) return null;
+        return {
+            name,
+            role: obj.role || obj.userRole || ERP_ROLE_MAP[name] || '同仁',
+            id: obj.id || obj.userId || obj.employeeId || name,
+            loginAt: obj.loginAt || obj.time || new Date().toISOString(),
+            source: obj.source || 'portal'
         };
+    }
 
-        /* === ERP Portal / SSO 綁定層 === */
-        const ERP_SESSION_KEY = 'HG_ERP_SESSION_V1';
-        const QUOTE_RECORDS_KEY = 'HG_QUOTATION_RECORDS_V1';
-        const QUOTE_AUDIT_KEY = 'HG_QUOTATION_AUDIT_V1';
+    function getUrlSession() {
+        const params = new URLSearchParams(location.search);
+        const name = params.get('name') || params.get('user') || params.get('operator');
+        if (!name) return null;
+        return normalizePortalPayload({
+            name,
+            role: params.get('role') || ERP_ROLE_MAP[name] || '同仁',
+            id: params.get('uid') || name,
+            source: 'url'
+        });
+    }
 
-        const EMPLOYEE_DIRECTORY = [
-            { name: '楊翊晟', role: '執行長', roleCode: 'CEO', isManager: true, canApprove: true },
-            { name: '張淑玲', role: '主管', roleCode: 'Manager', isManager: true, canApprove: true },
-            { name: '李宜婷', role: '主管', roleCode: 'Manager', isManager: true, canApprove: true },
-            { name: '呂蕙蓁', role: '一般助理', roleCode: 'Agent', isManager: false, canApprove: false },
-            { name: '楊雅婷', role: '會計', roleCode: 'Accounting', isManager: false, canApprove: false },
-            { name: '周美汎', role: '一般助理', roleCode: 'Agent', isManager: false, canApprove: false }
-        ];
-
-        let erpSession = null;
-        let quoteMeta = createEmptyQuoteMeta();
-
-        function createEmptyQuoteMeta() {
-            return {
-                quoteId: '',
-                createdBy: '',
-                createdRole: '',
-                createdAt: '',
-                updatedBy: '',
-                updatedRole: '',
-                updatedAt: '',
-                version: 0,
-                auditTrail: []
-            };
+    function getStoredSession() {
+        for (const key of ERP_SESSION_KEYS) {
+            const found = normalizePortalPayload(localStorage.getItem(key) || sessionStorage.getItem(key));
+            if (found) {
+                found.source = key;
+                return found;
+            }
         }
+        return null;
+    }
 
-        function normalizeName(v) { return String(v || '').trim().replace(/\s+/g, ''); }
-        function resolveEmployeeByName(name, roleCodeFromSession='') {
-            const key = normalizeName(name);
-            return EMPLOYEE_DIRECTORY.find(e => normalizeName(e.name) === key) || {
-                name: name || '未綁定使用者',
-                role: roleCodeFromSession || '單機模式',
-                roleCode: roleCodeFromSession || 'Standalone',
-                isManager: false,
-                canApprove: false
-            };
+    function setPortalUser(user, shouldPersist = true) {
+        const normalized = normalizePortalPayload(user);
+        if (!normalized) return false;
+        portalUser = normalized;
+        if (shouldPersist) {
+            localStorage.setItem('HG_ERP_SESSION_V1', JSON.stringify(normalized));
+            sessionStorage.setItem('HG_ERP_SESSION_V1', JSON.stringify(normalized));
         }
+        updatePortalBadge();
+        return true;
+    }
 
-        function sessionFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('hg_sso') !== '1' && !params.get('hg_name')) return null;
-            const name = params.get('hg_name') || params.get('hg_user') || '';
-            const roleCode = params.get('hg_roleCode') || '';
-            const emp = resolveEmployeeByName(name, roleCode);
-            return {
-                type: 'HG_ERP_SESSION',
-                version: 1,
-                username: params.get('hg_user') || emp.name,
-                name: emp.name,
-                role: params.get('hg_role') || emp.role,
-                roleCode: roleCode || emp.roleCode,
-                isManager: !!emp.isManager,
-                canReview: !!emp.canApprove,
-                sessionId: params.get('hg_session') || '',
-                source: 'url'
-            };
-        }
+    function getOperator() {
+        if (portalUser) return portalUser;
+        return { name: '單機測試', role: '未綁定', id: 'local', source: 'local' };
+    }
 
-        function sessionFromStorage() {
-            try {
-                const raw = localStorage.getItem(ERP_SESSION_KEY);
-                if (!raw) return null;
-                const parsed = JSON.parse(raw);
-                if (!parsed || !parsed.name) return null;
-                const emp = resolveEmployeeByName(parsed.name, parsed.roleCode);
-                return {
-                    ...parsed,
-                    name: emp.name,
-                    role: parsed.role || emp.role,
-                    roleCode: parsed.roleCode || emp.roleCode,
-                    isManager: !!(parsed.isManager || emp.isManager),
-                    canReview: !!(parsed.canReview || emp.canApprove),
-                    source: 'localStorage'
-                };
-            } catch(e) { return null; }
-        }
+    function isCeo() {
+        return getOperator().name === '楊翊晟' || getOperator().role === 'CEO' || getOperator().role === '執行長';
+    }
 
-        function getCurrentOperator() {
-            if (erpSession && erpSession.name) return erpSession;
-            return {
-                name: '未綁定使用者',
-                role: '單機模式',
-                roleCode: 'Standalone',
-                isManager: false,
-                canReview: false,
-                source: 'standalone'
-            };
-        }
+    function isManager() {
+        const op = getOperator();
+        return isCeo() || op.role === '主管' || ['張淑玲', '李宜婷'].includes(op.name);
+    }
 
-        function applyPortalSession(session) {
-            if (!session || !session.name) return;
-            const emp = resolveEmployeeByName(session.name, session.roleCode);
-            erpSession = {
-                ...session,
-                name: emp.name,
-                role: session.role || emp.role,
-                roleCode: session.roleCode || emp.roleCode,
-                isManager: !!(session.isManager || emp.isManager),
-                canReview: !!(session.canReview || emp.canApprove)
-            };
-            try {
-                localStorage.setItem(ERP_SESSION_KEY, JSON.stringify(erpSession));
-                localStorage.setItem('hg_current_operator', erpSession.name);
-                localStorage.setItem('hg_current_role', erpSession.roleCode);
-            } catch(e) {}
-            updatePortalBanner();
-            autoFillContactFromSession();
-            updateMetaDisplay();
+    function updatePortalBadge() {
+        const op = getOperator();
+        const nameEl = document.getElementById('erpOperatorName');
+        const roleEl = document.getElementById('erpOperatorRole');
+        const modeEl = document.getElementById('erpSessionMode');
+        const ridEl = document.getElementById('erpReceiptId');
+        const infoEl = document.getElementById('erpAuditInfo');
+        if (nameEl) nameEl.innerText = op.name;
+        if (roleEl) roleEl.innerText = op.role;
+        if (modeEl) {
+            modeEl.innerText = portalUser ? '已綁定' : '單機模式';
+            modeEl.style.background = portalUser ? 'rgba(34,197,94,.18)' : 'rgba(250,204,21,.14)';
+            modeEl.style.color = portalUser ? '#bbf7d0' : '#fde68a';
         }
+        if (ridEl) ridEl.innerText = currentReceiptId || '尚未建立';
+        if (infoEl) {
+            const last = auditTrail.length ? auditTrail[auditTrail.length - 1] : null;
+            infoEl.innerText = last
+                ? `最後動作：${last.action}｜${last.operatorName}｜${new Date(last.time).toLocaleString('zh-TW', {hour12:false})}`
+                : `目前操作人：${op.name}（${op.role}）。儲存、載入、封存/作廢都會留下紀錄。`;
+        }
+    }
+
+    function initPortalBinding() {
+        setPortalUser(getUrlSession() || getStoredSession(), false);
 
         window.addEventListener('message', (event) => {
             const data = event.data || {};
-            if (data.type === 'HG_ERP_SESSION' && data.session) {
-                applyPortalSession({ ...data.session, source: 'postMessage' });
+            if (data.type === 'HG_ERP_SESSION' || data.type === 'PORTAL_USER' || data.erpSession) {
+                setPortalUser(data.payload || data.user || data.erpSession, true);
             }
         });
 
-        function initPortalBinding() {
-            const s = sessionFromUrl() || sessionFromStorage();
-            if (s) applyPortalSession(s);
-            else updatePortalBanner();
-            // 主動通知父層：模組已可接收 Session
-            try {
-                if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'HG_MODULE_READY', module: 'quotation' }, '*');
-                }
-            } catch(e) {}
+        // 通知父層此模組已準備好接收登入身份
+        try { window.parent && window.parent.postMessage({ type: 'HG_MODULE_READY', module: 'receipts' }, '*'); } catch(e) {}
+
+        if (!currentReceiptId) currentReceiptId = generateReceiptId();
+        updatePortalBadge();
+    }
+
+    function collectReceiptDataForAudit() {
+        syncInputs();
+        const sTotal = serviceItems.reduce((acc, i) => acc + (Number(i.price)||0), 0);
+        const tTotal = taxItems.reduce((acc, i) => acc + (Number(i.price)||0), 0);
+        const discountAmount = Number(document.getElementById('discountAmount').value) || 0;
+        const adjustAmount = Number(document.getElementById('adjustAmount').value) || 0;
+        const prepayAmount = Number(document.getElementById('prepayAmount').value) || 0;
+        return {
+            firm: document.querySelector('input[name="firm"]:checked').value,
+            clientType: document.querySelector('input[name="clientType"]:checked').value,
+            date: document.getElementById('inputDate').value,
+            clientId: document.getElementById('inputClientId').value,
+            client: document.getElementById('inputClient').value,
+            target: document.getElementById('inputTarget').value,
+            notes: document.getElementById('inputNotes').value,
+            serviceItems: JSON.parse(JSON.stringify(serviceItems)),
+            taxItems: JSON.parse(JSON.stringify(taxItems)),
+            discountName: document.getElementById('discountName').value,
+            discountAmount: document.getElementById('discountAmount').value,
+            adjustName: document.getElementById('adjustName').value,
+            adjustAmount: document.getElementById('adjustAmount').value,
+            prepayAmount: document.getElementById('prepayAmount').value,
+            _totalAmount: (sTotal - discountAmount) + tTotal + adjustAmount - prepayAmount
+        };
+    }
+
+    function buildAuditEntry(action, note = '') {
+        const op = getOperator();
+        return {
+            time: new Date().toISOString(),
+            action,
+            operatorName: op.name,
+            operatorRole: op.role,
+            operatorId: op.id,
+            note
+        };
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function encodeReceiptActionId(value) {
+        return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
+    }
+
+    function appendHighlightedText(container, value, query) {
+        const text = String(value ?? '');
+        const needle = String(query ?? '').toLowerCase();
+        if (!needle) {
+            container.textContent = text;
+            return;
         }
-
-        function updatePortalBanner() {
-            const op = getCurrentOperator();
-            const user = document.getElementById('portalUserName');
-            const role = document.getElementById('portalUserRole');
-            const hint = document.getElementById('portalHint');
-            if (user) user.innerText = op.name || '未綁定總控制管理';
-            if (role) role.innerText = op.role || op.roleCode || '單機模式';
-            if (hint) {
-                hint.innerText = op.source === 'standalone'
-                    ? '目前為單機模式；從總控制管理進入時，會自動帶入登入者並寫入建立/修改紀錄。'
-                    : '已綁定總控制管理登入身份；本報價的建立人與修改人會自動留痕。';
-            }
+        const lower = text.toLowerCase();
+        let offset = 0;
+        let found = lower.indexOf(needle, offset);
+        while (found >= 0) {
+            container.appendChild(document.createTextNode(text.slice(offset, found)));
+            const strong = document.createElement('b');
+            strong.className = 'text-blue-600';
+            strong.textContent = text.slice(found, found + needle.length);
+            container.appendChild(strong);
+            offset = found + needle.length;
+            found = lower.indexOf(needle, offset);
         }
+        container.appendChild(document.createTextNode(text.slice(offset)));
+    }
 
-        function autoFillContactFromSession() {
-            const op = getCurrentOperator();
-            const contact = document.getElementById('inputContact');
-            if (!contact || !op.name || op.name === '未綁定使用者') return;
-            const current = String(contact.value || '').trim();
-            // 保守處理：只有空白或仍為預設楊翊晟時才自動帶入，避免覆蓋手動輸入
-            if (!current || current === '楊翊晟地政士') {
-                contact.value = op.name === '楊翊晟' ? '楊翊晟地政士' : op.name;
-                updatePreview();
-            }
+    function enrichReceiptData(data, action = '儲存收據', note = '') {
+        if (!currentReceiptId) currentReceiptId = generateReceiptId();
+        const now = new Date().toISOString();
+        const op = getOperator();
+        const prior = getReceiptRecords().find(r => r._receiptId === currentReceiptId);
+        const createdMeta = prior || currentReceiptCreatedMeta || {};
+        const entry = buildAuditEntry(action, note);
+        auditTrail = Array.isArray(prior?._auditTrail) ? [...prior._auditTrail, entry] : [...auditTrail, entry];
+
+        return {
+            ...data,
+            _receiptId: currentReceiptId,
+            _status: data._status || createdMeta._status || 'active',
+            _createdBy: createdMeta._createdBy || op.name,
+            _createdByRole: createdMeta._createdByRole || op.role,
+            _createdAt: createdMeta._createdAt || now,
+            _updatedBy: op.name,
+            _updatedByRole: op.role,
+            _updatedAt: now,
+            _lastAction: action,
+            _auditTrail: auditTrail,
+            _archivedBy: createdMeta._archivedBy || data._archivedBy || '',
+            _archivedByRole: createdMeta._archivedByRole || data._archivedByRole || '',
+            _archivedAt: createdMeta._archivedAt || data._archivedAt || '',
+            _archiveReason: createdMeta._archiveReason || data._archiveReason || ''
+        };
+    }
+
+    function getReceiptRecords() {
+        try { return JSON.parse(localStorage.getItem(ERP_RECEIPT_RECORDS_KEY) || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function setReceiptRecords(records) {
+        localStorage.setItem(ERP_RECEIPT_RECORDS_KEY, JSON.stringify(records));
+    }
+
+    function persistReceiptRecord(data, action = '儲存收據', note = '') {
+        const enriched = enrichReceiptData(data, action, note);
+        const records = getReceiptRecords();
+        const idx = records.findIndex(r => r._receiptId === enriched._receiptId);
+        if (idx >= 0) records[idx] = enriched;
+        else records.unshift(enriched);
+        setReceiptRecords(records);
+        currentReceiptCreatedMeta = enriched;
+        updatePortalBadge();
+        renderReceiptHistory();
+        return enriched;
+    }
+
+    window.saveReceiptRecordOnly = function() {
+        const saved = persistReceiptRecord(collectReceiptDataForAudit(), '儲存內部紀錄');
+        alert(`已儲存內部紀錄：${saved._receiptId}\n操作人：${saved._updatedBy}`);
+    };
+
+    window.openReceiptHistory = function() {
+        renderReceiptHistory();
+        document.getElementById('receiptHistoryModal').classList.remove('hidden');
+    };
+
+    window.closeReceiptHistory = function() {
+        document.getElementById('receiptHistoryModal').classList.add('hidden');
+    };
+
+    window.renderReceiptHistory = function() {
+        const body = document.getElementById('receiptHistoryBody');
+        if (!body) return;
+        const records = getReceiptRecords();
+        if (!records.length) {
+            body.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400">尚無紀錄</td></tr>';
+            return;
         }
+        body.innerHTML = records.map(r => {
+            const statusLabel = r._status === 'archived' ? '已作廢/封存' : '有效';
+            const statusClass = r._status === 'archived' ? 'audit-status-archived' : 'audit-status-active';
+            const amount = new Intl.NumberFormat('zh-TW', { style:'currency', currency:'TWD', minimumFractionDigits:0 }).format(Number(r._totalAmount || 0)).replace('TWD', '$');
+            const updatedAt = r._updatedAt ? new Date(r._updatedAt).toLocaleString('zh-TW', {hour12:false}) : '-';
+            const actionId = encodeReceiptActionId(r._receiptId);
+            return `<tr>
+                <td><div class="${statusClass}">${statusLabel}</div><div class="text-[11px] text-slate-400">${escapeHTML(r._receiptId || '')}</div></td>
+                <td>${escapeHTML(r.date || '-')}</td>
+                <td><b>${escapeHTML(r.client || '(未填客戶)')}</b><div class="text-xs text-slate-500 max-w-[260px]">${escapeHTML((r.target || '').slice(0,70))}</div></td>
+                <td>${amount}</td>
+                <td><div>建：${escapeHTML(r._createdBy || '-')}</div><div>改：${escapeHTML(r._updatedBy || '-')}</div><div class="text-xs text-slate-400">${escapeHTML(updatedAt)}</div></td>
+                <td>
+                    <button style="background:#dbeafe;color:#1e40af" onclick="loadReceiptRecord(decodeURIComponent('${actionId}'))">載入</button>
+                    <button style="background:#fee2e2;color:#991b1b" onclick="archiveReceiptRecord(decodeURIComponent('${actionId}'))">${r._status === 'archived' ? '已封存' : '作廢'}</button>
+                </td>
+            </tr>`;
+        }).join('');
+    };
 
-        /* === 報價單邏輯 === */
-        const today = new Date();
-        document.getElementById('inputDate').valueAsDate = today;
-        const d = new Date();
-        document.getElementById('inputValidDate').valueAsDate = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    window.loadReceiptRecord = function(id) {
+        const r = getReceiptRecords().find(x => x._receiptId === id);
+        if (!r) return alert('找不到此紀錄');
+        currentReceiptId = r._receiptId || generateReceiptId();
+        currentReceiptCreatedMeta = r;
+        auditTrail = Array.isArray(r._auditTrail) ? [...r._auditTrail] : [];
+        hydrateReceiptForm(r);
+        updatePortalBadge();
+        closeReceiptHistory();
+    };
 
-        let items = [{ desc: '', qty: 1, price: 0 }];
+    function hydrateReceiptForm(d) {
+        if(d.firm) document.querySelector(`input[name="firm"][value="${d.firm}"]`).checked = true;
+        if(d.clientType) document.querySelector(`input[name="clientType"][value="${d.clientType}"]`).checked = true;
+        document.getElementById('inputDate').value = d.date || '';
+        updateDateDisplay(d.date);
+        document.getElementById('inputClient').value = d.client || '';
+        document.getElementById('inputClientId').value = d.clientId || '';
+        document.getElementById('inputTarget').value = d.target || '';
+        document.getElementById('inputNotes').value = d.notes ?? '';
+        document.getElementById('discountName').value = d.discountName || '折扣';
+        document.getElementById('discountAmount').value = d.discountAmount || 0;
+        document.getElementById('adjustName').value = d.adjustName || '稅費找補';
+        document.getElementById('adjustAmount').value = d.adjustAmount || 0;
+        document.getElementById('prepayAmount').value = d.prepayAmount || 0;
+        serviceItems = d.serviceItems || [];
+        taxItems = d.taxItems || [];
+        refreshEditors();
+        updateView();
+    }
 
-        function escapeHTML(value) {
-            return String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+    window.archiveReceiptRecord = function(id) {
+        const records = getReceiptRecords();
+        const idx = records.findIndex(r => r._receiptId === id);
+        if (idx < 0) return alert('找不到此紀錄');
+        if (records[idx]._status === 'archived') return alert('此紀錄已封存');
+        const reason = prompt('請輸入作廢/封存原因：');
+        if (!reason) return alert('未填原因，已取消');
+        const op = getOperator();
+        records[idx]._status = 'archived';
+        records[idx]._archivedBy = op.name;
+        records[idx]._archivedByRole = op.role;
+        records[idx]._archivedAt = new Date().toISOString();
+        records[idx]._archiveReason = reason;
+        records[idx]._lastAction = '作廢/封存收據';
+        records[idx]._auditTrail = Array.isArray(records[idx]._auditTrail) ? records[idx]._auditTrail : [];
+        records[idx]._auditTrail.push(buildAuditEntry('作廢/封存收據', reason));
+        setReceiptRecords(records);
+        renderReceiptHistory();
+        updatePortalBadge();
+        alert('已作廢/封存並留下原因。');
+    };
+
+    window.archiveCurrentReceipt = function() {
+        if (!currentReceiptId) return alert('目前沒有可封存的收據紀錄，請先儲存。');
+        archiveReceiptRecord(currentReceiptId);
+    };
+
+    window.exportReceiptRecords = function() {
+        const records = getReceiptRecords();
+        const a = document.createElement('a');
+        const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], {type:'application/json'}));
+        a.download = `宏國易丞_收據留痕紀錄_${today}.json`;
+        a.click();
+    };
+
+    window.clearArchivedReceiptRecords = function() {
+        if (!isCeo()) return alert('只有楊翊晟可清除已封存紀錄。');
+        if (!confirm('確定清除本機已封存紀錄？正式營運建議先匯出備份。')) return;
+        setReceiptRecords(getReceiptRecords().filter(r => r._status !== 'archived'));
+        renderReceiptHistory();
+    };
+
+    // --- 智能運算核心 ---
+    // 允許輸入 1000+500, 500*2 等運算式，自動計算結果
+    function safeCalculate(expression) {
+        if (!expression) return 0;
+        // 如果只是純數字，直接回傳
+        if (!isNaN(expression)) return parseFloat(expression);
+        
+        try {
+            // 安全過濾：只允許數字和運算符號
+            const sanitized = expression.toString().replace(/[^0-9+\-*/().]/g, '');
+            if (!sanitized) return 0;
+            // 使用 Function 建構式進行計算 (比 eval 安全一點，但仍需小心，這裡已過濾)
+            const result = new Function('return ' + sanitized)();
+            
+            // 如果結果不是數字 (例如除以0變無限大)，回傳0
+            if (!isFinite(result) || isNaN(result)) return 0;
+            return Math.round(result); // 取整數
+        } catch (e) {
+            console.warn("計算錯誤", e);
+            return 0; // 計算失敗回傳 0
         }
+    }
 
-        function generateQuoteId() {
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth()+1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-            return `QT-${y}${m}${dd}-${rand}`;
+    // 綁定到 input 的輔助函式
+    window.applyMath = function(el) {
+        const val = el.value;
+        const res = safeCalculate(val);
+        el.value = res; // 更新欄位顯示運算後結果
+        calculateTotal(); // 觸發總計
+    }
+
+    // ----------------------
+
+    const firms = {
+        yicheng: {
+            name: "易丞地政士事務所", id: "92367068", agent: "楊翊晟", address: "台南市北區文賢路1080巷11號",
+            color: "#1e40af", bg: "#eff6ff", border: "border-blue-800"
+        },
+        hongguo: {
+            name: "宏國地政士事務所", id: "97956971", agent: "楊明宗", address: "台南市北區文賢路1080巷11號",
+            color: "#166534", bg: "#f0fdf4", border: "border-green-800"
         }
+    };
+    
+    const defaultServiceOpts = ["不動產移轉登記費", "抵押權設定代辦費", "水電過戶代辦費", "簽約費", "實價登錄費", "代辦住址隱匿及地籍異動即時通", "使用分區", "天然瓦斯過戶代辦費"];
+    const defaultTaxOpts = ["土地及建物登記規費", "書狀費", "設定規費", "土地契約印花稅", "建物契約印花稅", "電費", "水費", "天然瓦斯費", "影印費", "謄本費", "分區使用證明申請費"];
 
-        function nowText() {
-            return new Date().toLocaleString('zh-TW', { hour12: false });
-        }
+    let currentServiceOpts = [], currentTaxOpts = [];
+    let serviceItems = [{name: "不動產移轉登記費", price: 0}], taxItems = [{name: "土地及建物登記規費", price: 0}];
+    let currentEditType = 'service';
 
-        function renderInputItems() {
-            const container = document.getElementById('itemsContainer');
-            container.innerHTML = '';
-            items.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'item-row';
-                div.innerHTML = `
-                    <input type="text" placeholder="品項" value="${escapeHTML(item.desc)}" oninput="updateItem(${index}, 'desc', this.value)">
-                    <input type="number" placeholder="數" value="${escapeHTML(item.qty)}" oninput="updateItem(${index}, 'qty', this.value)">
-                    <input type="number" placeholder="價" value="${escapeHTML(item.price)}" oninput="updateItem(${index}, 'price', this.value)">
-                    <button class="btn btn-red" onclick="removeItem(${index})">X</button>
-                `;
-                container.appendChild(div);
-            });
-            updatePreview();
-        }
-
-        function addItem() { items.push({ desc: '', qty: 1, price: 0 }); renderInputItems(); }
-        function removeItem(index) { items.splice(index, 1); renderInputItems(); }
-        function updateItem(index, field, value) {
-            items[index][field] = (field === 'qty' || field === 'price') ? (parseFloat(value) || 0) : value;
-            calculateTotal();
-            updateMetaDisplay();
-        }
-
-        function formatMoney(amount) {
-            amount = Number(amount) || 0;
-            return 'NT$' + amount.toFixed(0).replace(/\d(?=(\d{3})+$)/g, '$&,');
-        }
-
-        function getTotals() {
-            let subtotal = 0;
-            items.forEach(item => subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0));
-            const discount = parseFloat(document.getElementById('inputDiscount').value) || 0;
-            return { subtotal, discount, total: subtotal - discount };
-        }
-
-        function calculateTotal() {
-            const totals = getTotals();
-            const tbody = document.getElementById('displayItems');
-            tbody.innerHTML = '';
-            items.forEach(item => {
-                const qty = Number(item.qty) || 0;
-                const price = Number(item.price) || 0;
-                const amount = qty * price;
-                tbody.innerHTML += `<tr><td>${escapeHTML(item.desc)}</td><td class="text-center">${escapeHTML(qty)}</td><td class="text-right">${formatMoney(price)}</td><td class="text-right">${formatMoney(amount)}</td></tr>`;
-            });
-            document.getElementById('displaySubtotal').innerText = formatMoney(totals.subtotal);
-            document.getElementById('displayDiscount').innerText = '-' + formatMoney(totals.discount);
-            document.getElementById('displayTotal').innerText = formatMoney(totals.total);
-
-            const reason = document.getElementById('inputDiscountReason');
-            const warn = document.getElementById('discountWarning');
-            if (warn) warn.style.display = (totals.discount > 0 && reason && !reason.value.trim()) ? 'block' : 'none';
-            updateMetaDisplay();
-        }
-
-        function updatePreview() {
-            const ids = ['Subject', 'Client', 'ClientAddress', 'Date', 'ValidDate', 'Notes', 'Contact', 'Phone', 'CompanyAddress'];
-            ids.forEach(id => {
-                const el = document.getElementById('display' + id);
-                const input = document.getElementById('input' + id);
-                if(el && input) el.innerText = input.value;
-            });
-            calculateTotal();
-        }
-
-        function collectQuoteData() {
-            const totals = getTotals();
-            return {
-                subject: document.getElementById('inputSubject').value || '',
-                quoteDate: document.getElementById('inputDate').value || '',
-                validDate: document.getElementById('inputValidDate').value || '',
-                companyAddress: document.getElementById('inputCompanyAddress').value || '',
-                contact: document.getElementById('inputContact').value || '',
-                phone: document.getElementById('inputPhone').value || '',
-                client: document.getElementById('inputClient').value || '',
-                clientAddress: document.getElementById('inputClientAddress').value || '',
-                items: JSON.parse(JSON.stringify(items)),
-                discount: totals.discount,
-                discountReason: document.getElementById('inputDiscountReason')?.value || '',
-                subtotal: totals.subtotal,
-                total: totals.total,
-                notes: document.getElementById('inputNotes').value || '',
-                meta: quoteMeta
-            };
-        }
-
-        function validateBeforeSave() {
-            const totals = getTotals();
-            const reason = document.getElementById('inputDiscountReason')?.value.trim() || '';
-            if (totals.discount > 0 && !reason) {
-                alert('有折扣金額時，請先填寫「折扣原因 / 主管核准備註」。');
-                return false;
-            }
-            return true;
-        }
-
-        function getRecords() {
-            try { return JSON.parse(localStorage.getItem(QUOTE_RECORDS_KEY) || '[]'); } catch(e) { return []; }
-        }
-
-        function setRecords(records) {
-            localStorage.setItem(QUOTE_RECORDS_KEY, JSON.stringify(records));
-        }
-
-        function appendGlobalAudit(entry) {
-            try {
-                const logs = JSON.parse(localStorage.getItem(QUOTE_AUDIT_KEY) || '[]');
-                logs.unshift(entry);
-                localStorage.setItem(QUOTE_AUDIT_KEY, JSON.stringify(logs.slice(0, 300)));
-            } catch(e) {}
-        }
-
-        function saveQuoteRecord() {
-            if (!validateBeforeSave()) return;
-            const op = getCurrentOperator();
-            const now = new Date().toISOString();
-            const isNew = !quoteMeta.quoteId;
-            if (isNew) {
-                quoteMeta.quoteId = generateQuoteId();
-                quoteMeta.createdBy = op.name;
-                quoteMeta.createdRole = op.role || op.roleCode;
-                quoteMeta.createdAt = now;
-                quoteMeta.version = 1;
-            } else {
-                quoteMeta.version = (Number(quoteMeta.version) || 1) + 1;
-            }
-            quoteMeta.updatedBy = op.name;
-            quoteMeta.updatedRole = op.role || op.roleCode;
-            quoteMeta.updatedAt = now;
-            const data = collectQuoteData();
-            const auditEntry = {
-                time: now,
-                timeText: nowText(),
-                operator: op.name,
-                role: op.role || op.roleCode,
-                action: isNew ? '建立報價' : '修改報價',
-                quoteId: quoteMeta.quoteId,
-                subject: data.subject,
-                total: data.total,
-                discount: data.discount,
-                discountReason: data.discountReason
-            };
-            quoteMeta.auditTrail = quoteMeta.auditTrail || [];
-            quoteMeta.auditTrail.unshift(auditEntry);
-            data.meta = quoteMeta;
-
-            const records = getRecords();
-            const idx = records.findIndex(r => r.meta && r.meta.quoteId === quoteMeta.quoteId);
-            if (idx >= 0) records[idx] = data;
-            else records.unshift(data);
-            setRecords(records.slice(0, 200));
-            appendGlobalAudit(auditEntry);
-            updateMetaDisplay();
-            renderSavedRecords();
-            alert('報價紀錄已儲存，建立/修改人已留痕。');
-        }
-
-        function updateMetaDisplay() {
-            const idEl = document.getElementById('metaQuoteId');
-            const cEl = document.getElementById('metaCreatedBy');
-            const uEl = document.getElementById('metaUpdatedBy');
-            if (idEl) idEl.innerText = quoteMeta.quoteId || '尚未儲存';
-            if (cEl) cEl.innerText = quoteMeta.createdBy ? `${quoteMeta.createdBy}｜${quoteMeta.createdAt ? new Date(quoteMeta.createdAt).toLocaleString('zh-TW', {hour12:false}) : ''}` : '--';
-            if (uEl) uEl.innerText = quoteMeta.updatedBy ? `${quoteMeta.updatedBy}｜v${quoteMeta.version || 1}` : '--';
-        }
-
-        function renderSavedRecords() {
-            const list = document.getElementById('savedRecordsList');
-            if (!list) return;
-            const records = getRecords().filter(r => !r.archived);
-            if (!records.length) {
-                list.innerHTML = '<div style="padding:10px; color:#888; font-size:12px;">尚無本機報價紀錄</div>';
-                return;
-            }
-            list.innerHTML = records.slice(0, 20).map((r, i) => {
-                const meta = r.meta || {};
-                return `
-                    <div class="record-item">
-                        <div>
-                            <div class="record-title">${escapeHTML(r.subject || r.client || meta.quoteId || '未命名報價')}</div>
-                            <div class="record-meta">${escapeHTML(meta.quoteId || '--')}｜${escapeHTML(meta.updatedBy || meta.createdBy || '--')}｜${formatMoney(r.total || 0)}</div>
-                        </div>
-                        <div class="record-actions">
-                            <button class="btn-small btn-gray" onclick="loadQuoteRecord('${escapeHTML(meta.quoteId)}')">載入</button>
-                            <button class="btn-small btn-ghost" onclick="archiveQuoteRecord('${escapeHTML(meta.quoteId)}')">封存</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function loadQuoteRecord(quoteId) {
-            const record = getRecords().find(r => r.meta && r.meta.quoteId === quoteId);
-            if (!record) return alert('找不到此報價紀錄。');
-            document.getElementById('inputSubject').value = record.subject || '';
-            document.getElementById('inputDate').value = record.quoteDate || '';
-            document.getElementById('inputValidDate').value = record.validDate || '';
-            document.getElementById('inputCompanyAddress').value = record.companyAddress || '';
-            document.getElementById('inputContact').value = record.contact || '';
-            document.getElementById('inputPhone').value = record.phone || '';
-            document.getElementById('inputClient').value = record.client || '';
-            document.getElementById('inputClientAddress').value = record.clientAddress || '';
-            document.getElementById('inputDiscount').value = record.discount || 0;
-            const reason = document.getElementById('inputDiscountReason');
-            if (reason) reason.value = record.discountReason || '';
-            document.getElementById('inputNotes').value = record.notes || '';
-            items = Array.isArray(record.items) && record.items.length ? JSON.parse(JSON.stringify(record.items)) : [{ desc: '', qty: 1, price: 0 }];
-            quoteMeta = record.meta || createEmptyQuoteMeta();
-            renderInputItems();
-            updateMetaDisplay();
-        }
-
-        function archiveQuoteRecord(quoteId) {
-            const op = getCurrentOperator();
-            const reason = prompt('請輸入封存原因：');
-            if (!reason) return;
-            const records = getRecords();
-            const idx = records.findIndex(r => r.meta && r.meta.quoteId === quoteId);
-            if (idx < 0) return;
-            records[idx].archived = true;
-            records[idx].archiveReason = reason;
-            records[idx].archivedBy = op.name;
-            records[idx].archivedAt = new Date().toISOString();
-            setRecords(records);
-            appendGlobalAudit({ time: new Date().toISOString(), timeText: nowText(), operator: op.name, role: op.role || op.roleCode, action: '封存報價', quoteId, reason });
-            renderSavedRecords();
-        }
-
-        function downloadQuoteJson() {
-            const data = collectQuoteData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            const safeName = (data.subject || data.client || data.meta.quoteId || 'quotation').replace(/[\\/:*?"<>|]/g, '_');
-            a.download = `${safeName}_報價紀錄.json`;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(a.href), 500);
-        }
-
-        function loadBlankQuote() {
-            if (!confirm('確定建立新的空白報價？目前未儲存修改可能會遺失。')) return;
-            quoteMeta = createEmptyQuoteMeta();
-            items = [{ desc: '', qty: 1, price: 0 }];
-            document.getElementById('inputSubject').value = '';
-            document.getElementById('inputDate').valueAsDate = new Date();
-            const nd = new Date();
-            document.getElementById('inputValidDate').valueAsDate = new Date(nd.getFullYear(), nd.getMonth() + 1, 0);
-            document.getElementById('inputClient').value = '';
-            document.getElementById('inputClientAddress').value = '';
-            document.getElementById('inputDiscount').value = 0;
-            const reason = document.getElementById('inputDiscountReason');
-            if (reason) reason.value = '';
-            autoFillContactFromSession();
-            renderInputItems();
-            updateMetaDisplay();
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initPortalBinding();
-            renderInputItems();
-            renderSavedRecords();
-            updateMetaDisplay();
-        });
-
-        // 先執行一次，支援舊瀏覽器未觸發 DOMContentLoaded 的情境
+    function init() {
         initPortalBinding();
-        renderInputItems();
-        renderSavedRecords();
-        updateMetaDisplay();
-    </script>
-<!-- Chosen Palette: Existing Red/Blue Professional -->
-<!-- Application Structure Plan: Split view quotation editor with live preview. Left side controls input, right side displays A4 print preview. -->
-<!-- Visualization & Content Choices: HTML Table for line items, real-time JS calculation for totals. No SVG graphics used. NO Mermaid JS used. -->
-<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+        const today = new Date();
+        document.getElementById('inputDate').value = today.toISOString().split('T')[0];
+        updateDateDisplay(document.getElementById('inputDate').value);
+        
+        loadOptionsLocally();
+        setupLiveUpdates();
+        updateView();
+        toggleStampMode();
+        renderReceiptHistory();
+        setTimeout(autoFitContent, 500); 
+    }
+
+    function autoFitContent() {
+        const paper = document.getElementById('paper');
+        const content = document.getElementById('scalableContent');
+        const maxHeight = paper.clientHeight - 40; 
+        
+        content.style.transform = `scale(1)`;
+        
+        const contentHeight = content.scrollHeight;
+        if (contentHeight > maxHeight) {
+            const scale = maxHeight / contentHeight;
+            const finalScale = Math.max(scale, 0.65); 
+            content.style.transform = `scale(${finalScale})`;
+        }
+    }
+
+    const observeDOM = (function(){
+        const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+        return function( obj, callback ){
+            if( !obj || !obj.nodeType === 1 ) return; 
+            if( MutationObserver ){
+                const obs = new MutationObserver(function(mutations, observer){ callback(mutations); });
+                obs.observe( obj, { childList:true, subtree:true, attributes: true } );
+            }
+            else if( window.addEventListener ){
+                obj.addEventListener('DOMNodeInserted', callback, false);
+                obj.addEventListener('DOMNodeRemoved', callback, false);
+            }
+        }
+    })();
+
+    observeDOM( document.getElementById('scalableContent'), function(){ 
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(autoFitContent, 100);
+    });
+
+    function updateView() {
+        const firmKey = document.querySelector('input[name="firm"]:checked').value;
+        const data = firms[firmKey];
+        
+        document.getElementById('firmName').innerText = data.name;
+        document.getElementById('firmName').style.color = data.color;
+        document.getElementById('headerBorder').className = `flex justify-between items-end border-b-4 pb-2 mb-3 ${data.border}`;
+        document.getElementById('firmAddress').innerText = data.address;
+        
+        document.getElementById('stampFirmName').innerText = data.name;
+        document.getElementById('stampId').innerText = data.id;
+        document.getElementById('stampAgent').innerText = data.agent;
+        
+        document.getElementById('headerService').style.color = data.color;
+        document.getElementById('headerService').style.borderColor = data.color;
+        document.getElementById('headerTax').style.color = data.color;
+        document.getElementById('headerTax').style.borderColor = data.color;
+
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        // 先確保數據正確
+        syncInputs();
+
+        const sTotal = serviceItems.reduce((acc, i) => acc + (Number(i.price)||0), 0);
+        const tTotal = taxItems.reduce((acc, i) => acc + (Number(i.price)||0), 0);
+        
+        const dAmount = Number(document.getElementById('discountAmount').value) || 0;
+        const finalServiceTotal = sTotal - dAmount;
+
+        const adjustAmount = Number(document.getElementById('adjustAmount').value) || 0;
+        const prepayAmount = Number(document.getElementById('prepayAmount').value) || 0;
+
+        const rawGrandTotal = finalServiceTotal + tTotal + adjustAmount - prepayAmount;
+        const isCompany = document.querySelector('input[name="clientType"]:checked').value === 'company';
+        
+        document.getElementById('totalService').innerText = formatCurrency(finalServiceTotal);
+        document.getElementById('totalTax').innerText = formatCurrency(tTotal);
+
+        const dRow = document.getElementById('displayDiscountRow');
+        if(dAmount > 0) {
+            dRow.classList.remove('hidden');
+            document.getElementById('dName').innerText = document.getElementById('discountName').value;
+            document.getElementById('dAmount').innerText = formatCurrency(dAmount);
+        } else {
+            dRow.classList.add('hidden');
+        }
+
+        const rAdj = document.getElementById('rowAdjust');
+        const tAdj = document.getElementById('txtAdjustAmount');
+        if(adjustAmount !== 0) {
+            rAdj.classList.remove('hidden');
+            rAdj.className = adjustAmount < 0 ? "text-red-600 font-bold" : "text-blue-700 font-bold";
+            document.getElementById('txtAdjustName').innerText = document.getElementById('adjustName').value + ":";
+            tAdj.innerText = (adjustAmount>0?'+':'') + formatCurrency(adjustAmount);
+        } else {
+            rAdj.classList.add('hidden');
+        }
+
+        const rPre = document.getElementById('rowPrepay');
+        if(prepayAmount > 0) {
+            rPre.classList.remove('hidden');
+            document.getElementById('txtPrepayAmount').innerText = '-' + formatCurrency(prepayAmount);
+        } else {
+            rPre.classList.add('hidden');
+        }
+
+        const normalBox = document.getElementById('normalTotalBox');
+        const companyBox = document.getElementById('companyTaxBox');
+
+        if(isCompany && finalServiceTotal > 20000) {
+            normalBox.classList.add('hidden');
+            companyBox.classList.remove('hidden');
+            const tax = Math.round(finalServiceTotal * 0.1);
+            document.getElementById('rawTotalAmount').innerText = formatCurrency(rawGrandTotal);
+            document.getElementById('taxDeductionAmount').innerText = '-' + formatCurrency(tax);
+            document.getElementById('netTotalAmount').innerText = formatCurrency(rawGrandTotal - tax);
+            document.getElementById('displayClientType').innerText = "公司行號";
+        } else {
+            normalBox.classList.remove('hidden');
+            companyBox.classList.add('hidden');
+            document.getElementById('grandTotal').innerText = formatCurrency(rawGrandTotal);
+            document.getElementById('displayClientType').innerText = isCompany ? "公司行號" : "個人";
+        }
+
+        renderRows('displayServiceRows', serviceItems);
+        renderRows('displayTaxRows', taxItems);
+        autoFitContent();
+    }
+
+    function renderRows(id, items) {
+        const tbody = document.getElementById(id);
+        tbody.innerHTML = '';
+        items.forEach(item => {
+            if(!item.name && !item.price) return;
+            const tr = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            nameCell.textContent = item.name ?? '';
+            const amountCell = document.createElement('td');
+            amountCell.className = 'amount-col';
+            amountCell.textContent = item.price ? formatCurrency(item.price) : '-';
+            tr.append(nameCell, amountCell);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function setupLiveUpdates() {
+        document.getElementById('inputDate').addEventListener('input', (e) => updateDateDisplay(e.target.value));
+        ['inputClient','inputClientId','inputTarget','inputNotes'].forEach(id => {
+            document.getElementById(id).addEventListener('input', (e) => {
+                document.getElementById(id.replace('input','display')).innerText = e.target.value;
+                autoFitContent(); 
+            });
+             document.getElementById(id.replace('input','display')).innerText = document.getElementById(id).value;
+        });
+    }
+
+    function syncInputs() {
+        serviceItems.forEach((item, i) => {
+            const n = document.getElementById(`in-service-name-${i}`);
+            const p = document.getElementById(`in-service-price-${i}`);
+            if(n) item.name = n.value;
+            if(p) item.price = Number(p.value);
+        });
+        taxItems.forEach((item, i) => {
+            const n = document.getElementById(`in-tax-name-${i}`);
+            const p = document.getElementById(`in-tax-price-${i}`);
+            if(n) item.name = n.value;
+            if(p) item.price = Number(p.value);
+        });
+    }
+
+    // --- 新增：排序功能 ---
+    window.moveItem = function(type, index, direction) {
+        syncInputs(); // 先保存當前輸入
+        const arr = type === 'service' ? serviceItems : taxItems;
+        const newIndex = index + direction;
+        
+        // 邊界檢查
+        if (newIndex < 0 || newIndex >= arr.length) return;
+        
+        // 交換位置
+        [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+        
+        renderEditor(type);
+        calculateTotal();
+    }
+    // -------------------
+
+    function renderEditor(type) {
+        const arr = type === 'service' ? serviceItems : taxItems;
+        const container = document.getElementById(type+'Items');
+        container.innerHTML = '';
+        arr.forEach((item, i) => {
+            const div = document.createElement('div');
+            // row-wrapper active-row 是修復 z-index 關鍵
+            div.className = "flex gap-1 items-center mb-1 row-wrapper";
+            div.innerHTML = `
+                <div class="flex flex-col gap-0.5 mr-1">
+                    <button onclick="moveItem('${type}', ${i}, -1)" class="text-[10px] bg-gray-200 hover:bg-gray-300 px-1 rounded h-4 flex items-center justify-center text-gray-600" title="上移"><i class="fas fa-chevron-up"></i></button>
+                    <button onclick="moveItem('${type}', ${i}, 1)" class="text-[10px] bg-gray-200 hover:bg-gray-300 px-1 rounded h-4 flex items-center justify-center text-gray-600" title="下移"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="relative flex-1">
+                    <input type="text" id="in-${type}-name-${i}" value="${escapeHTML(item.name)}" 
+                        class="w-full border rounded px-2 py-1 text-sm focus:bg-blue-50 outline-none transition" placeholder="項目名稱"
+                        oninput="handleEditorInput('${type}', ${i}, 'name', this)"
+                        onfocus="showSuggest('${type}', ${i}, this)" 
+                        onblur="setTimeout(() => hideSuggest('${type}', ${i}), 200)"
+                        autocomplete="off">
+                    <div id="sug-${type}-${i}" class="autocomplete-suggestions"></div>
+                </div>
+                <input type="text" id="in-${type}-price-${i}" value="${item.price}" 
+                    class="w-20 border rounded px-2 py-1 text-sm text-right outline-none focus:bg-blue-50 transition" placeholder="$"
+                    onchange="applyMath(this); handleEditorInput('${type}', ${i}, 'price', this)">
+                <button onclick="delItem('${type}', ${i})" class="text-gray-400 hover:text-red-500 w-6"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    window.addItem = function(type) {
+        syncInputs();
+        (type==='service'?serviceItems:taxItems).push({name:"", price:""});
+        renderEditor(type);
+    }
+    window.delItem = function(type, i) {
+        syncInputs();
+        (type==='service'?serviceItems:taxItems).splice(i, 1);
+        renderEditor(type);
+        calculateTotal();
+    }
+    window.handleEditorInput = function(type, i, field, el) {
+        const arr = type === 'service' ? serviceItems : taxItems;
+        arr[i][field] = field === 'price' ? Number(el.value) : el.value;
+        if(field === 'name') showSuggest(type, i, el); 
+        calculateTotal();
+    }
+
+    window.showSuggest = function(type, i, input) {
+        const list = document.getElementById(`sug-${type}-${i}`);
+        const opts = type === 'service' ? currentServiceOpts : currentTaxOpts;
+        const val = input.value.toLowerCase();
+        list.innerHTML = '';
+        let count = 0;
+        opts.forEach(opt => {
+            if(opt.toLowerCase().includes(val)) {
+                const d = document.createElement('div');
+                appendHighlightedText(d, opt, val);
+                d.onmousedown = (e) => {
+                    e.preventDefault(); // 防止失去焦點
+                    input.value = opt;
+                    handleEditorInput(type, i, 'name', input);
+                    list.style.display = 'none';
+                    input.closest('.row-wrapper').classList.remove('active-row');
+                };
+                list.appendChild(d);
+                count++;
+            }
+        });
+        
+        if (count > 0 && document.activeElement === input) {
+            list.style.display = 'block';
+            document.querySelectorAll('.active-row').forEach(el=>el.classList.remove('active-row'));
+            input.closest('.row-wrapper').classList.add('active-row');
+        } else {
+            list.style.display = 'none';
+            input.closest('.row-wrapper').classList.remove('active-row');
+        }
+    }
+    
+    window.hideSuggest = function(type, i) {
+        const list = document.getElementById(`sug-${type}-${i}`);
+        if(list) list.style.display = 'none';
+        const row = list.closest('.row-wrapper');
+        if(row) row.classList.remove('active-row');
+    }
+
+    function closeAllLists(e) {
+        if(!e.target.closest('.row-wrapper')) {
+            document.querySelectorAll('.autocomplete-suggestions').forEach(el => el.style.display='none');
+            document.querySelectorAll('.active-row').forEach(el => el.classList.remove('active-row'));
+        }
+    }
+
+    function loadOptionsLocally() {
+        const s = localStorage.getItem('serviceOpts_v4');
+        const t = localStorage.getItem('taxOpts_v4');
+        currentServiceOpts = s ? JSON.parse(s) : [...defaultServiceOpts];
+        currentTaxOpts = t ? JSON.parse(t) : [...defaultTaxOpts];
+        refreshEditors();
+    }
+    function saveOptionsLocally() {
+        localStorage.setItem('serviceOpts_v4', JSON.stringify(currentServiceOpts));
+        localStorage.setItem('taxOpts_v4', JSON.stringify(currentTaxOpts));
+    }
+    function refreshEditors() { renderEditor('service'); renderEditor('tax'); }
+
+    window.saveCase = function() {
+        syncInputs();
+        const data = {
+            firm: document.querySelector('input[name="firm"]:checked').value,
+            clientType: document.querySelector('input[name="clientType"]:checked').value,
+            date: document.getElementById('inputDate').value,
+            clientId: document.getElementById('inputClientId').value,
+            client: document.getElementById('inputClient').value,
+            target: document.getElementById('inputTarget').value,
+            notes: document.getElementById('inputNotes').value,
+            serviceItems, taxItems,
+            discountName: document.getElementById('discountName').value,
+            discountAmount: document.getElementById('discountAmount').value,
+            adjustName: document.getElementById('adjustName').value,
+            adjustAmount: document.getElementById('adjustAmount').value,
+            prepayAmount: document.getElementById('prepayAmount').value
+        };
+        const savedData = persistReceiptRecord(data, '儲存收據並下載JSON');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(savedData, null, 2)], {type: "application/json"}));
+        a.download = `收據_${savedData.client || "未命名"}_${savedData.date.replace(/-/g,'')}_${savedData._receiptId}.json`;
+        a.click();
+    }
+
+    window.loadCase = function(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const d = JSON.parse(e.target.result);
+                currentReceiptId = d._receiptId || generateReceiptId();
+                currentReceiptCreatedMeta = d._receiptId ? d : null;
+                auditTrail = Array.isArray(d._auditTrail) ? [...d._auditTrail] : [];
+                if(d.serviceOpts && !d.firm) { 
+                    if(confirm("這是設定檔，要匯入選項嗎？")) {
+                        currentServiceOpts = d.serviceOpts; currentTaxOpts = d.taxOpts;
+                        saveOptionsLocally();
+                    }
+                    return;
+                }
+                if(d.firm) document.querySelector(`input[name="firm"][value="${d.firm}"]`).checked = true;
+                if(d.clientType) document.querySelector(`input[name="clientType"][value="${d.clientType}"]`).checked = true;
+                document.getElementById('inputDate').value = d.date || '';
+                updateDateDisplay(d.date);
+                ['inputClient','inputClientId','inputTarget','inputNotes'].forEach(id => {
+                    document.getElementById(id).value = d[id.replace('input','').charAt(0).toLowerCase() + id.replace('input','').slice(1)] || (id==='inputNotes'?d.notes:'');
+                });
+                document.getElementById('discountName').value = d.discountName||"折扣";
+                document.getElementById('discountAmount').value = d.discountAmount||0;
+                document.getElementById('adjustName').value = d.adjustName||"稅費找補";
+                document.getElementById('adjustAmount').value = d.adjustAmount||0;
+                document.getElementById('prepayAmount').value = d.prepayAmount||0;
+
+                serviceItems = d.serviceItems || [];
+                taxItems = d.taxItems || [];
+
+                let learned = false;
+                serviceItems.forEach(i => { if(i.name && !currentServiceOpts.includes(i.name)) { currentServiceOpts.push(i.name); learned=true; }});
+                taxItems.forEach(i => { if(i.name && !currentTaxOpts.includes(i.name)) { currentTaxOpts.push(i.name); learned=true; }});
+                if(learned) saveOptionsLocally();
+
+                refreshEditors();
+                updateView();
+                persistReceiptRecord(collectReceiptDataForAudit(), "讀取舊檔");
+                alert("讀取成功！");
+            } catch(err) { alert("檔案錯誤"); }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    }
+
+    window.resetCase = function() {
+        if(!confirm("確定要開啟新案件嗎？")) return;
+        currentReceiptId = generateReceiptId();
+        currentReceiptCreatedMeta = null;
+        auditTrail = [];
+        updatePortalBadge();
+        document.getElementById('inputClient').value = "";
+        document.getElementById('inputTarget').value = "";
+        serviceItems = [{name:"", price:0}];
+        taxItems = [{name:"", price:0}];
+        document.getElementById('discountAmount').value = 0;
+        document.getElementById('adjustAmount').value = 0;
+        document.getElementById('prepayAmount').value = 0;
+        refreshEditors();
+        updateView();
+        document.getElementById('inputNotes').value = "◎若要辦理地價稅自用，請於9月22日前申請。\n◎若要辦理房屋稅自用，請於3月22日前申請。\n◎辦理自用稅率需先將戶籍遷入。\n◎上列地政士代辦費，本事務所列為執行業務收入，若付款人為中華民國境內之公司行號或機關團體，請依法扣繳10%稅款 ，並開立扣繳憑單予本事務所。";
+        document.getElementById('displayNotes').innerText = document.getElementById('inputNotes').value;
+    }
+
+    window.openOptionManager = function(type) {
+        currentEditType = type;
+        document.getElementById('modalManager').classList.remove('hidden');
+        document.getElementById('modalTitle').innerText = type==='service'?'管理代辦費選項':'管理規費選項';
+        renderManagerOpts();
+    }
+    window.closeOptionManager = function() {
+        document.getElementById('modalManager').classList.add('hidden');
+        refreshEditors();
+    }
+    function renderManagerOpts() {
+        const c = document.getElementById('optionListContainer');
+        const opts = currentEditType==='service'?currentServiceOpts:currentTaxOpts;
+        c.innerHTML = '';
+        opts.forEach((o, i) => {
+            const d = document.createElement('div');
+            d.className = "flex justify-between items-center bg-white border rounded px-2 py-1";
+            d.innerHTML = `<span>${escapeHTML(o)}</span><button onclick="delMgrOpt(${i})" class="text-red-500"><i class="fas fa-trash"></i></button>`;
+            c.appendChild(d);
+        });
+    }
+    window.addNewOptionToManager = function() {
+        const inp = document.getElementById('newOptionInput');
+        if(!inp.value) return;
+        (currentEditType==='service'?currentServiceOpts:currentTaxOpts).push(inp.value);
+        saveOptionsLocally(); renderManagerOpts(); inp.value='';
+    }
+    window.delMgrOpt = function(i) {
+        if(!confirm("刪除此選項？")) return;
+        (currentEditType==='service'?currentServiceOpts:currentTaxOpts).splice(i,1);
+        saveOptionsLocally(); renderManagerOpts();
+    }
+
+    function updateDateDisplay(val) {
+        if(!val) return;
+        const d = new Date(val);
+        document.getElementById('displayDate').innerText = `${d.getFullYear()-1911}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    }
+    function formatCurrency(n) { return new Intl.NumberFormat('zh-TW',{style:'currency',currency:'TWD',minimumFractionDigits:0}).format(n).replace('TWD','$'); }
+    
+    function toggleStampMode() {
+        const mode = document.querySelector('input[name="printMode"]:checked').value;
+        const paper = document.getElementById('paper');
+        
+        if (mode === 'print') {
+            paper.classList.add('hide-stamp');
+        } else {
+            paper.classList.remove('hide-stamp');
+        }
+    }
+
+    init();
+</script>
 </body>
 </html>
