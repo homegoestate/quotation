@@ -558,9 +558,15 @@
             updateMetaDisplay();
         }
 
+        // Display/attribution hint only. This origin and window check rejects
+        // messages from unrelated pages; actual business authorization must be
+        // established by the receiving module's server-side identity verifier.
         window.addEventListener('message', (event) => {
+            if (window.parent === window || event.source !== window.parent ||
+                event.origin !== window.location.origin) return;
             const data = event.data || {};
-            if (data.type === 'HG_ERP_SESSION' && data.session) {
+            if (data.type === 'HG_ERP_SESSION' && data.session &&
+                typeof data.session.name === 'string' && data.session.name.length <= 100) {
                 applyPortalSession({ ...data.session, source: 'postMessage' });
             }
         });
@@ -572,7 +578,7 @@
             // 主動通知父層：模組已可接收 Session
             try {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'HG_MODULE_READY', module: 'quotation' }, '*');
+                    window.parent.postMessage({ type: 'HG_MODULE_READY', module: 'quotation' }, window.location.origin);
                 }
             } catch(e) {}
         }
