@@ -520,7 +520,7 @@
                     roleCode: parsed.roleCode || emp.roleCode,
                     isManager: !!(parsed.isManager || emp.isManager),
                     canReview: !!(parsed.canReview || emp.canApprove),
-                    source: 'localStorage'
+                    source: 'sessionStorage'
                 };
             } catch(e) { return null; }
         }
