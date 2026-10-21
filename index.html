@@ -508,7 +508,7 @@
 
         function sessionFromStorage() {
             try {
-                const raw = localStorage.getItem(ERP_SESSION_KEY);
+                const raw = sessionStorage.getItem(ERP_SESSION_KEY);
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
                 if (!parsed || !parsed.name) return null;
@@ -520,7 +520,7 @@
                     roleCode: parsed.roleCode || emp.roleCode,
                     isManager: !!(parsed.isManager || emp.isManager),
                     canReview: !!(parsed.canReview || emp.canApprove),
-                    source: 'localStorage'
+                    source: 'sessionStorage'
                 };
             } catch(e) { return null; }
         }
@@ -548,11 +548,23 @@
                 isManager: !!(session.isManager || emp.isManager),
                 canReview: !!(session.canReview || emp.canApprove)
             };
+            // Attribution only. The authenticated identity must come from
+            // the portal/runtime, never from a stale shared-origin localStorage
+            // snapshot. Keep this small, tab-bound and replaceable.
             try {
-                localStorage.setItem(ERP_SESSION_KEY, JSON.stringify(erpSession));
-                localStorage.setItem('hg_current_operator', erpSession.name);
-                localStorage.setItem('hg_current_role', erpSession.roleCode);
-            } catch(e) {}
+                const hint = {
+                    type: 'HG_ERP_SESSION',
+                    name: erpSession.name,
+                    role: erpSession.role,
+                    roleCode: erpSession.roleCode,
+                    username: erpSession.username || erpSession.name,
+                    sessionId: erpSession.sessionId || ''
+                };
+                sessionStorage.setItem(ERP_SESSION_KEY, JSON.stringify(hint));
+                sessionStorage.setItem('hg_current_operator', erpSession.name);
+                sessionStorage.setItem('hg_current_role', erpSession.roleCode);
+            } catch(e) { /* In-memory current operator still works. */ }
+            try { localStorage.removeItem(ERP_SESSION_KEY); } catch(e) {} // ERP session only, never quotation records
             updatePortalBanner();
             autoFillContactFromSession();
             updateMetaDisplay();
