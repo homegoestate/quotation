@@ -50,7 +50,7 @@ test('quotation reload reads tab-scoped ERP hint, never a stale localStorage rol
  tab.setItem('HG_ERP_SESSION_V1',JSON.stringify({name:'楊雅婷',role:'會計',roleCode:'ACCOUNTING'}));
  const restored=ctx.sessionFromStorage();
  assert.equal(restored.name,'楊雅婷');
- assert.equal(restored.source,'localStorage'); // legacy label retained for compatibility; storage is tab-scoped 
+ assert.equal(restored.source,'sessionStorage'); 
 });
 test('same-origin parent origin verification remains intact',()=>{
  assert.match(html,/event\.source !== window\.parent/);
